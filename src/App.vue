@@ -54,8 +54,15 @@ const selectionOptions = ref<{ [group: string]: string[] }>({})
 
 let REGIONDATASET: RegionDataSet
 
+async function fetchPublicFile(filename) {
+  const isProduction = import.meta.env.PROD;
+  const basePath = isProduction ? '/map-explorer/' : '/';
+  const response = await fetch(`${basePath}${filename}`);
+  return response;
+}
+
 async function fetchAndParseJson(url: string) {
-  const response = await fetch(url)
+  const response = await fetchPublicFile(url)
   const data = await response.json()
   return data
 }
