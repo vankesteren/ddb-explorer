@@ -5,8 +5,8 @@
 <script setup lang="ts">
 import { ref, onMounted, watchEffect } from 'vue'
 import * as d3 from 'd3'
-import { GeoJSON, Feature } from 'geojson'
 import type { RegionData } from "../parse_data.ts"
+import type { GeoJSON } from "geojson"
 
 interface Props {
   geojson?: GeoJSON | null

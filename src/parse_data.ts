@@ -1,11 +1,11 @@
-interface RegionData {
+export interface RegionData {
   region_id: string
   color: string
   value: string
   label: string
 }
 
-interface RegionDataSet {
+export interface RegionDataSet {
   [group: string]: {
     [groupValue: string]: RegionData[]
   }

@@ -16,7 +16,7 @@
             <Selection
               :label="group"
               :options="values"
-              @selection-changed="(value) => handleSelectionChange(group, value)"
+              @selection-changed="(value: any) => handleSelectionChange(group, value)"
             />
           </div>
         </div>
@@ -52,7 +52,7 @@ const geojsonData = ref<GeoJSON | null>(null)
 const regionData = ref<RegionData[] | null>(null)
 const selectionOptions = ref<{ [group: string]: string[] }>({})
 
-let REGIONDATASET
+let REGIONDATASET: RegionDataSet
 
 async function fetchAndParseJson(url: string) {
   const response = await fetch(url)
