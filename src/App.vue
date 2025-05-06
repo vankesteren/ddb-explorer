@@ -61,15 +61,15 @@ async function fetchPublicFile(filename) {
   return response;
 }
 
-async function fetchAndParseJson(url: string) {
+async function fetchAndParseFile(url: string) {
   const response = await fetchPublicFile(url)
   const data = await response.json()
   return data
 }
 
 async function loadInitialData() {
-  const geoJson = await fetchAndParseJson('/nederland.geojson') as GeoJSON
-  REGIONDATASET = await fetchAndParseJson('/region_data.json') as RegionDataSet
+  const geoJson = await fetchAndParseFile('nederland.geojson') as GeoJSON
+  REGIONDATASET = await fetchAndParseFile('region_data.json') as RegionDataSet
   geojsonData.value = geoJson
   selectionOptions.value = extractGroupsAndValues(REGIONDATASET)
 }
