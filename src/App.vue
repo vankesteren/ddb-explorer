@@ -22,9 +22,14 @@
         </div>
 
         <div class="w-2/3 p-6 flex flex-col items-center justify-center">
-          <Generic
+          <Map
             v-if="geojsonData"
             :geojson="geojsonData"
+            :regionData="regionData"
+            class="w-full h-96"
+          />
+          <LegendHistogram
+            v-if="geojsonData"
             :regionData="regionData"
             class="w-full h-96"
           />
@@ -38,8 +43,16 @@
 </template>
 
 <script setup lang="ts">
+
+import {
+  initialize,
+  registerFile,
+  executeQuery,
+} from "./duckdb.ts"
+
 import { ref, onMounted } from 'vue'
-import Generic from './components/generic.vue'
+import Map from './components/map.vue'
+import LegendHistogram from './components/legend-histogram.vue'
 import Spinner from './components/spinner.vue'
 import Selection from './components/selection.vue'
 import type { GeoJSON } from 'geojson'
@@ -53,6 +66,18 @@ const regionData = ref<RegionData[] | null>(null)
 const selectionOptions = ref<{ [group: string]: string[] }>({})
 
 let REGIONDATASET: RegionDataSet
+
+
+async function loadDataset() {
+  await initialize()
+  await registerFile("asd.parquet", "/mentions_monthly.parquet")
+  const a = await executeQuery("SELECT DISTINCT year FROM read_parquet('asd.parquet')")
+  console.log(a)
+  const b = await executeQuery("SELECT DISTINCT month FROM read_parquet('asd.parquet')")
+  console.log(b)
+  const c = await executeQuery("SELECT DISTINCT disease FROM read_parquet('asd.parquet')")
+  console.log(c)
+}
 
 async function fetchPublicFile(filename) {
   const isProduction = import.meta.env.PROD;
@@ -79,6 +104,7 @@ function handleSelectionChange(group: string, value: string) {
 }
 
 onMounted(() => {
+  //loadDataset()
   loadInitialData()
 })
 </script>

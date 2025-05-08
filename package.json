@@ -12,10 +12,12 @@
     "lint": "eslint . --fix"
   },
   "dependencies": {
+    "@duckdb/duckdb-wasm": "^1.29.1-dev132.0",
     "@tailwindcss/vite": "^4.1.4",
     "@types/d3": "^7.4.3",
     "d3": "^7.9.0",
     "geojson": "^0.5.0",
+    "hyparquet": "^1.13.1",
     "papaparse": "^5.5.2",
     "tailwindcss": "^4.1.4",
     "topojson": "^3.0.2",

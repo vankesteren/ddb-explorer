@@ -1,3 +1,18 @@
+//const { parquetQuery, asyncBufferFromUrl, parquetReadObjects } = await import('hyparquet')
+//import { compressors } from 'hyparquet-compressors'
+//
+//const url = '/mentions_monthly.parquet'
+//const file = await asyncBufferFromUrl({ url }) // wrap url for async fetching
+//const data = await parquetQuery({
+//  file,
+//  compressors,
+//  columns: ['year', 'month', 'disease', 'mention_rate'],
+//  filter: { year: 1897, month: 2, disease: "malaria" }
+//  //rowStart: 10,
+//  //rowEnd: 20,
+//})
+
+
 export interface RegionData {
   region_id: string
   color: string
