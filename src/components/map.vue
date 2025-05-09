@@ -55,14 +55,20 @@ const renderMap = () => {
 
   const d3ColorScale = d3.scaleLinear([0, 10000], ["red", "blue"])
 
-  g.selectAll<SVGPathElement, Feature>('path')
+  const paths = g.selectAll<SVGPathElement, Feature>('path')
     .data(geojsonData.features)
     .join('path')
     .attr('d', pathGenerator)
     .attr('stroke', '#333')
     .attr('stroke-width', 1)
-    .attr('fill', 'transparent')
-    .on('mouseover', function(event, d) {
+    .attr('fill', 'transparent');
+
+  paths.transition().duration(500).attr('fill', (d) => {
+      const color = d3ColorScale(regionDataMap.get(d.properties.statcode)?.value);
+      return color || '#ccc'
+    });
+
+  paths.on('mouseover', function(event, d) {
       const bbox = this.getBBox()
       const centerX = bbox.x + bbox.width / 2
       const centerY = bbox.y + bbox.height / 2
@@ -70,6 +76,10 @@ const renderMap = () => {
         .transition()
         .duration(100)
         .attr('transform', `translate(${centerX}, ${centerY}) scale(1.05) translate(${-centerX}, ${-centerY})`)
+        .attr('fill', (d) => {
+          const color = d3ColorScale(regionDataMap.get(d.properties.statcode)?.value);
+          return color || '#ccc'
+        })
 
       tooltip
         .style("visibility", "visible")
@@ -81,24 +91,28 @@ const renderMap = () => {
         .style("left", (event.pageX + 15) + "px")
         .style("top", (event.pageY - 10) + "px")
     })
+    .on('mouseenter', function(event, d) {
+      d3.select(this)
+        .attr('fill', (d) => {
+          const color = d3ColorScale(regionDataMap.get(d.properties.statcode)?.value);
+          return color || '#ccc'
+        })
+    })
     .on('mouseout', function(event, d) {
       d3.select(this)
         .transition()
         .duration(100)
         .attr('transform', 'scale(1)')
-
+        .attr('fill', (d) => {
+          const color = d3ColorScale(regionDataMap.get(d.properties.statcode)?.value);
+          return color || '#ccc'
+        })
       tooltip.style("visibility", "hidden")
     })
     .on('mousemove', function(event) {
       tooltip
         .style("left", (event.pageX + 15) + "px")
         .style("top", (event.pageY - 10) + "px")
-    })
-    .transition()
-    .duration(500)
-    .attr('fill', (d) => {
-      const color = d3ColorScale(regionDataMap.get(d.properties.statcode)?.value)
-      return color || '#ccc'
     })
 }
 
