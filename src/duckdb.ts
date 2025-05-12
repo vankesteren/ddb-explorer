@@ -40,7 +40,7 @@ export async function executeQuery(query: string): Promise<duckdb.DuckDBDataArra
         throw new Error('Database not initialized or connection not established. Call initialize() first.')
     }
     const result = await conn.query(query)
-    return JSON.stringify(result.toArray());
+    return JSON.parse(JSON.stringify(result.toArray()));
 }
 
 

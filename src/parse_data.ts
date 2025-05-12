@@ -1,42 +1,63 @@
-//const { parquetQuery, asyncBufferFromUrl, parquetReadObjects } = await import('hyparquet')
-//import { compressors } from 'hyparquet-compressors'
-//
-//const url = '/mentions_monthly.parquet'
-//const file = await asyncBufferFromUrl({ url }) // wrap url for async fetching
-//const data = await parquetQuery({
-//  file,
-//  compressors,
-//  columns: ['year', 'month', 'disease', 'mention_rate'],
-//  filter: { year: 1897, month: 2, disease: "malaria" }
-//  //rowStart: 10,
-//  //rowEnd: 20,
-//})
+import {
+  initialize,
+  registerFile,
+  executeQuery,
+} from "./duckdb.ts"
 
+// Set the variables of dataset
+// could be initialized differently
+// Move to config file or UI interface later
+const PARQUET_FILE = "mentions_monthly.parquet"
+const CATEGORY_COLS = [
+  "year",
+  "month",
+  "disease"
+]
+const VALUE_COL = "mention_rate"
+const ID_COL = "cbscode"
 
 export interface RegionData {
-  region_id: string
-  color: string
+  regionId: string
   value: string
-  label: string
 }
 
-export interface RegionDataSet {
-  [group: string]: {
-    [groupValue: string]: RegionData[]
+// initialze database, load dataset
+await initialize()
+await registerFile("dataset.parquet", `/${PARQUET_FILE}`)
+
+export async function extractGroupsAndValues(): { [group: string]: string[] } {
+  const out: { [group: string]: string[] } = {};
+
+  for (const category of CATEGORY_COLS) {
+    const query = `
+      SELECT DISTINCT
+        ${category}
+      FROM
+        read_parquet('dataset.parquet')
+    `;
+
+    const result = await executeQuery(query);
+    out[category] = result.map(item => item[category].toString());
   }
+
+  return out;
 }
 
-export function extractGroupsAndValues(data: RegionDataSet): { [group: string]: string[] } {
-  const result: { [group: string]: string[] } = {};
+export async function getRegionData(selectedCategoryValues): RegionData[] {
+  const filter_clause = Object.entries(selectedCategoryValues)
+    .map(([category_col, value]) => `${category_col} == '${value}'`)
+    .join(" AND ")
 
-  for (const group in data) {
-    const groupValues = Object.keys(data[group]);
-    result[group] = groupValues;
-  }
+  const query = `
+    SELECT
+      ${ID_COL} AS regionId,
+      ${VALUE_COL} AS value
+    FROM
+      read_parquet('dataset.parquet')
+    WHERE
+      ${filter_clause}
+  `;
 
-  return result;
-}
-
-export function getRegionData(data: RegionDataSet, group: string, groupValue: string): RegionData[] {
-  return data[group][groupValue];
+    const out = await executeQuery(query);
+    return out
 }

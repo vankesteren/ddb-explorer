@@ -12,7 +12,7 @@
       <div class="flex">
         <div class="w-1/3 p-6 border-r border-gray-200">
           <h2 class="text-lg font-medium mb-4 text-gray-700">Map Controls</h2>
-          <div v-for="(values, group) in selectionOptions" :key="group" class="mb-4">
+          <div v-for="(values, group) in selectionCategoryData" :key="group" class="mb-4">
             <Selection
               :label="group"
               :options="values"
@@ -26,11 +26,16 @@
             v-if="geojsonData"
             :geojson="geojsonData"
             :regionData="regionData"
+            :regionId="'cbscode'"
+            :colorScaleDomain="[0, 1]"
             class="w-full h-96"
           />
           <LegendHistogram
             v-if="geojsonData"
             :regionData="regionData"
+            :title="'Mention Rate'"
+            :minValue="0"
+            :maxValue="1"
             class="w-full h-96"
           />
           <div v-else class="text-gray-500 flex items-center justify-center h-96">
@@ -44,13 +49,7 @@
 
 <script setup lang="ts">
 
-import {
-  initialize,
-  registerFile,
-  executeQuery,
-} from "./duckdb.ts"
-
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import Map from './components/map.vue'
 import LegendHistogram from './components/legend-histogram.vue'
 import Spinner from './components/spinner.vue'
@@ -58,26 +57,14 @@ import Selection from './components/selection.vue'
 import type { GeoJSON } from 'geojson'
 
 import { getRegionData, extractGroupsAndValues } from './parse_data'
-import type { RegionData, RegionDataSet } from './parse_data'
+import type { RegionData } from './parse_data'
 
 // reactive variables
 const geojsonData = ref<GeoJSON | null>(null)
 const regionData = ref<RegionData[] | null>(null)
-const selectionOptions = ref<{ [group: string]: string[] }>({})
+const selectionCategoryData = ref<{ [key: string]: string[] }>({});
+const selectedCategoryValues = ref<{ [key: string]: string }>({});
 
-let REGIONDATASET: RegionDataSet
-
-
-async function loadDataset() {
-  await initialize()
-  await registerFile("asd.parquet", "/mentions_monthly.parquet")
-  const a = await executeQuery("SELECT DISTINCT year FROM read_parquet('asd.parquet')")
-  console.log(a)
-  const b = await executeQuery("SELECT DISTINCT month FROM read_parquet('asd.parquet')")
-  console.log(b)
-  const c = await executeQuery("SELECT DISTINCT disease FROM read_parquet('asd.parquet')")
-  console.log(c)
-}
 
 async function fetchPublicFile(filename) {
   const isProduction = import.meta.env.PROD;
@@ -86,6 +73,7 @@ async function fetchPublicFile(filename) {
   return response;
 }
 
+
 async function fetchAndParseFile(url: string) {
   const response = await fetchPublicFile(url)
   const data = await response.json()
@@ -93,18 +81,29 @@ async function fetchAndParseFile(url: string) {
 }
 
 async function loadInitialData() {
-  const geoJson = await fetchAndParseFile('nederland.geojson') as GeoJSON
-  REGIONDATASET = await fetchAndParseFile('region_data.json') as RegionDataSet
+  const geoJson = await fetchAndParseFile('nl1869.geojson') as GeoJSON
   geojsonData.value = geoJson
-  selectionOptions.value = extractGroupsAndValues(REGIONDATASET)
+  selectionCategoryData.value = await extractGroupsAndValues()
 }
 
-function handleSelectionChange(group: string, value: string) {
-  regionData.value = getRegionData(REGIONDATASET, group, value)
+function handleSelectionChange(category: string, value: any) {
+  selectedCategoryValues.value[category] = value
 }
+
+watch(selectedCategoryValues, async () => {
+  const allSelectedNow = Object.keys(selectionCategoryData.value).every(key =>
+    selectedCategoryValues.value[key] !== undefined &&
+    selectedCategoryValues.value[key] !== null &&
+    selectedCategoryValues.value[key] !== ''
+  );
+
+  if (allSelectedNow) {
+    regionData.value = await getRegionData(selectedCategoryValues.value);
+  }
+}, { deep: true })
 
 onMounted(() => {
-  //loadDataset()
   loadInitialData()
 })
+
 </script>

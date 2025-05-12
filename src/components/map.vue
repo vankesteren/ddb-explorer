@@ -9,8 +9,10 @@ import type { RegionData } from "../parse_data.ts"
 import type { GeoJSON } from "geojson"
 
 interface Props {
-  geojson?: GeoJSON | null
-  regionData?: RegionData[] | null
+  geojson: GeoJSON | null
+  regionData: RegionData[] | null
+  regionId: string
+  colorScaleDomain: [string, string]
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -25,6 +27,8 @@ const renderMap = () => {
   const svgElement = svgRef.value
   const geojsonData = props.geojson
   const regionData = props.regionData
+  const regionId = props.regionId
+  const colorScaleDomain = props.colorScaleDomain
 
   if (!svgElement || !geojsonData) {
     return
@@ -36,7 +40,6 @@ const renderMap = () => {
 
   // Clear existing content
   svg.selectAll("*").remove()
-
   const g = svg.append('g')
 
   if (!tooltipRef.value) {
@@ -50,10 +53,14 @@ const renderMap = () => {
 
   const regionDataMap = new Map<string, any>()
   regionData?.forEach(region => {
-    regionDataMap.set(region.region_id, region)
+    regionDataMap.set(region.regionId, region)
   })
 
-  const d3ColorScale = d3.scaleLinear([0, 10000], ["red", "blue"])
+  const d3ColorScale = d3.scaleLinear(colorScaleDomain, ["white", "red"])
+  function getColor(d) {
+    const color = d3ColorScale(regionDataMap.get(d.properties[regionId])?.value)
+    return color || '#ccc'
+  }
 
   const paths = g.selectAll<SVGPathElement, Feature>('path')
     .data(geojsonData.features)
@@ -64,9 +71,8 @@ const renderMap = () => {
     .attr('fill', 'transparent');
 
   paths.transition().duration(500).attr('fill', (d) => {
-      const color = d3ColorScale(regionDataMap.get(d.properties.statcode)?.value);
-      return color || '#ccc'
-    });
+      return getColor(d)
+    })
 
   paths.on('mouseover', function(event, d) {
       const bbox = this.getBBox()
@@ -77,16 +83,15 @@ const renderMap = () => {
         .duration(100)
         .attr('transform', `translate(${centerX}, ${centerY}) scale(1.05) translate(${-centerX}, ${-centerY})`)
         .attr('fill', (d) => {
-          const color = d3ColorScale(regionDataMap.get(d.properties.statcode)?.value);
-          return color || '#ccc'
+          return getColor(d)
         })
 
       tooltip
         .style("visibility", "visible")
         .html(`
-          <div class="font-bold text-gray-800">Region: ${d.properties.statcode}</div>
-          <div class="text-gray-600 mt-1">Additional information here</div>
-          <div class="text-gray-600 mt-1">Value: ${regionDataMap.get(d.properties.statcode)?.value}</div>
+          <div class="font-bold text-gray-800">Region: ${d.properties[regionId]}</div>
+          <div class="text-gray-600 mt-1">${d.properties.name}</div>
+          <div class="text-gray-600 mt-1">Value: ${regionDataMap.get(d.properties[regionId])?.value}</div>
         `)
         .style("left", (event.pageX + 15) + "px")
         .style("top", (event.pageY - 10) + "px")
@@ -94,8 +99,7 @@ const renderMap = () => {
     .on('mouseenter', function(event, d) {
       d3.select(this)
         .attr('fill', (d) => {
-          const color = d3ColorScale(regionDataMap.get(d.properties.statcode)?.value);
-          return color || '#ccc'
+          return getColor(d)
         })
     })
     .on('mouseout', function(event, d) {
@@ -104,8 +108,7 @@ const renderMap = () => {
         .duration(100)
         .attr('transform', 'scale(1)')
         .attr('fill', (d) => {
-          const color = d3ColorScale(regionDataMap.get(d.properties.statcode)?.value);
-          return color || '#ccc'
+          return getColor(d)
         })
       tooltip.style("visibility", "hidden")
     })
