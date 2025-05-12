@@ -54,6 +54,7 @@ import Map from './components/map.vue'
 import LegendHistogram from './components/legend-histogram.vue'
 import Spinner from './components/spinner.vue'
 import Selection from './components/selection.vue'
+import { fetchPublicFile } from './helpers.ts'
 import type { GeoJSON } from 'geojson'
 
 import {
@@ -70,15 +71,7 @@ const selectionCategoryData = ref<{ [key: string]: string[] }>({});
 const selectedCategoryValues = ref<{ [key: string]: string }>({});
 
 // constants
-const PARQUET_FILE = "mentions_monthly.parquet"
 const GEOJSON = "nl1869.geojson"
-
-async function fetchPublicFile(filename) {
-  const isProduction = import.meta.env.PROD;
-  const basePath = isProduction ? '/map-explorer/' : '/';
-  const response = await fetch(`${basePath}${filename}`);
-  return response;
-}
 
 async function fetchAndParseFile(url: string) {
   const response = await fetchPublicFile(url)

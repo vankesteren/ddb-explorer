@@ -24,7 +24,7 @@ export interface RegionData {
 
 export async function initializeRegionDataSet(): void {
   await initialize()
-  await registerFile("dataset.parquet", `/${PARQUET_FILE}`)
+  await registerFile("dataset.parquet", `${PARQUET_FILE}`)
 }
 
 
