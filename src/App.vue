@@ -56,7 +56,11 @@ import Spinner from './components/spinner.vue'
 import Selection from './components/selection.vue'
 import type { GeoJSON } from 'geojson'
 
-import { getRegionData, extractGroupsAndValues } from './parse_data'
+import {
+  getRegionData,
+  extractGroupsAndValues,
+  initializeRegionDataSet
+} from './parse_data'
 import type { RegionData } from './parse_data'
 
 // reactive variables
@@ -65,6 +69,9 @@ const regionData = ref<RegionData[] | null>(null)
 const selectionCategoryData = ref<{ [key: string]: string[] }>({});
 const selectedCategoryValues = ref<{ [key: string]: string }>({});
 
+// constants
+const PARQUET_FILE = "mentions_monthly.parquet"
+const GEOJSON = "nl1869.geojson"
 
 async function fetchPublicFile(filename) {
   const isProduction = import.meta.env.PROD;
@@ -73,7 +80,6 @@ async function fetchPublicFile(filename) {
   return response;
 }
 
-
 async function fetchAndParseFile(url: string) {
   const response = await fetchPublicFile(url)
   const data = await response.json()
@@ -81,7 +87,8 @@ async function fetchAndParseFile(url: string) {
 }
 
 async function loadInitialData() {
-  const geoJson = await fetchAndParseFile('nl1869.geojson') as GeoJSON
+  const geoJson = await fetchAndParseFile(GEOJSON) as GeoJSON
+  await initializeRegionDataSet()
   geojsonData.value = geoJson
   selectionCategoryData.value = await extractGroupsAndValues()
 }

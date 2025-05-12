@@ -7,7 +7,6 @@ import {
 // Set the variables of dataset
 // could be initialized differently
 // Move to config file or UI interface later
-const PARQUET_FILE = "mentions_monthly.parquet"
 const CATEGORY_COLS = [
   "year",
   "month",
@@ -15,15 +14,19 @@ const CATEGORY_COLS = [
 ]
 const VALUE_COL = "mention_rate"
 const ID_COL = "cbscode"
+const PARQUET_FILE = "mentions_monthly.parquet"
 
 export interface RegionData {
   regionId: string
   value: string
 }
 
-// initialze database, load dataset
-await initialize()
-await registerFile("dataset.parquet", `/${PARQUET_FILE}`)
+
+export async function initializeRegionDataSet(): void {
+  await initialize()
+  await registerFile("dataset.parquet", `/${PARQUET_FILE}`)
+}
+
 
 export async function extractGroupsAndValues(): { [group: string]: string[] } {
   const out: { [group: string]: string[] } = {};
