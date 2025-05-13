@@ -1,45 +1,58 @@
 <template>
-  <div class="flex flex-col items-center justify-center min-h-screen w-full">
-    <div class="w-full max-w-6xl bg-white">
-      <div class="px-8 py-6 flex items-center">
-        <h1 class="text-2xl font-medium text-gray-800">Map Explorer</h1>
-        <div class="ml-auto flex items-center gap-4">
+  <div class="flex flex-col items-center justify-center min-h-screen w-full bg-gray-50 relative">
+    <!-- Main content with map centered -->
+    <div class="w-full h-screen flex flex-col">
+      <!-- Map container (takes full width/height) -->
+      <div class="w-full h-full items-center p-5 lg:m-10">
+        <Map
+          v-if="geojsonData"
+          :geojson="geojsonData"
+          :regionData="regionData"
+          :regionId="'cbscode'"
+          :colorScaleDomain="[0, 1]"
+          class="w-full h-full"
+        />
+        <div v-else class="w-full h-full flex items-center justify-center">
+          <Spinner />
+        </div>
+
+        <!-- Legend in bottom left -->
+        <div v-if="geojsonData && regionData" class="absolute top-0">
+          <LegendHistogram
+            :regionData="regionData"
+            :title="'Mention Rate'"
+            :minValue="0"
+            :maxValue="1"
+            />
         </div>
       </div>
+    </div>
 
-      <div class="h-px w-full bg-gray-200"></div>
+    <!-- Slide-out controls panel -->
+    <div class="absolute right-0 top-0 h-full flex">
+      <!-- Controls panel toggle button -->
+      <button
+        @click="isControlsOpen = !isControlsOpen"
+        class="bg-gray-800 text-white p-2 h-12 sm:self-center -ml-12 rounded-l-lg flex items-center justify-center shadow-lg"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" :class="{'rotate-180': isControlsOpen}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
 
-      <div class="flex">
-        <div class="w-1/3 p-6 border-r border-gray-200">
+      <!-- Controls panel content -->
+      <div
+        class="bg-white h-full shadow-lg transition-all duration-300 ease-in-out overflow-y-auto"
+        :class="isControlsOpen ? 'w-80' : 'w-0'"
+      >
+        <div class="p-6" :class="{'opacity-0': !isControlsOpen}">
           <h2 class="text-lg font-medium mb-4 text-gray-700">Map Controls</h2>
-          <div v-for="(values, group) in selectionCategoryData" :key="group" class="mb-4">
+          <div v-for="(values, group) in selectionCategoryData" :key="group" class="mb-6">
             <Selection
               :label="group"
               :options="values"
               @selection-changed="(value: any) => handleSelectionChange(group, value)"
             />
-          </div>
-        </div>
-
-        <div class="w-2/3 p-6 flex flex-col items-center justify-center">
-          <Map
-            v-if="geojsonData"
-            :geojson="geojsonData"
-            :regionData="regionData"
-            :regionId="'cbscode'"
-            :colorScaleDomain="[0, 1]"
-            class="w-full h-96"
-          />
-          <LegendHistogram
-            v-if="geojsonData"
-            :regionData="regionData"
-            :title="'Mention Rate'"
-            :minValue="0"
-            :maxValue="1"
-            class="w-full h-96"
-          />
-          <div v-else class="text-gray-500 flex items-center justify-center h-96">
-            <Spinner />
           </div>
         </div>
       </div>
@@ -48,7 +61,6 @@
 </template>
 
 <script setup lang="ts">
-
 import { ref, onMounted, computed, watch } from 'vue'
 import Map from './components/map.vue'
 import LegendHistogram from './components/legend-histogram.vue'
@@ -56,7 +68,6 @@ import Spinner from './components/spinner.vue'
 import Selection from './components/selection.vue'
 import { fetchPublicFile } from './helpers.ts'
 import type { GeoJSON } from 'geojson'
-
 import {
   getRegionData,
   extractGroupsAndValues,
@@ -69,6 +80,7 @@ const geojsonData = ref<GeoJSON | null>(null)
 const regionData = ref<RegionData[] | null>(null)
 const selectionCategoryData = ref<{ [key: string]: string[] }>({});
 const selectedCategoryValues = ref<{ [key: string]: string }>({});
+const isControlsOpen = ref(false); // Controls panel state
 
 // constants
 const GEOJSON = "nl1869.geojson"
@@ -105,5 +117,4 @@ watch(selectedCategoryValues, async () => {
 onMounted(() => {
   loadInitialData()
 })
-
 </script>
