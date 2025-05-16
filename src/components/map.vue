@@ -84,7 +84,7 @@ const renderMap = () => {
     .attr('stroke-width', 0.5)
     .attr('fill', 'transparent');
 
-  paths.transition().duration(500).attr('fill', (d) => {
+  paths.attr('fill', (d) => {
       return getColor(d)
     })
 
