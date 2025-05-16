@@ -5,7 +5,7 @@
       <!-- Map container (takes full width/height) -->
       <div class="w-full h-full items-center p-5 lg:m-10">
         <Map
-          v-if="geojsonData"
+          v-if="isAppLoaded"
           :geojson="geojsonData"
           :regionData="regionData"
           :regionId="'cbscode'"
@@ -17,7 +17,7 @@
         </div>
 
         <!-- Legend in bottom left -->
-        <div v-if="geojsonData && regionData" class="absolute top-0">
+        <div v-if="isAppLoaded" class="absolute top-0">
           <LegendHistogram
             :regionData="regionData"
             :title="'Mention Rate'"
@@ -29,7 +29,7 @@
     </div>
 
     <!-- Slide-out controls panel -->
-    <div class="absolute right-0 top-0 h-full flex">
+    <div class="absolute right-0 top-0 h-full flex" :class="{'hidden': !isAppLoaded}">
       <!-- Controls panel toggle button -->
       <button
         @click="isControlsOpen = !isControlsOpen"
@@ -82,6 +82,7 @@ const regionData = ref<RegionData[] | null>(null)
 const selectionCategoryData = ref<{ [key: string]: string[] }>({});
 const selectedCategoryValues = ref<{ [key: string]: string }>({});
 const isControlsOpen = ref(false); // Controls panel state
+const isAppLoaded = ref(false)
 
 // constants
 const GEOJSON = "nl1869.geojson"
@@ -112,6 +113,7 @@ watch(selectedCategoryValues, async () => {
 
   if (allSelectedNow) {
     regionData.value = await getRegionData(selectedCategoryValues.value);
+    isAppLoaded.value = true
   }
 }, { deep: true })
 

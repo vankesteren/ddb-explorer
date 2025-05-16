@@ -31,7 +31,7 @@ export default {
   props: {
     size: {
       type: String,
-      default: 'md',
+      default: 'lg',
       validator: (value) => ['xs', 'sm', 'md', 'lg', 'xl'].includes(value)
     },
     label: {
@@ -52,9 +52,9 @@ export default {
       const sizes = {
         xs: 'h-4 w-4',
         sm: 'h-6 w-6',
-        md: 'h-8 w-8',
-        lg: 'h-12 w-12',
-        xl: 'h-16 w-16'
+        md: 'h-12 w-12',
+        lg: 'h-64 w-64',
+        xl: 'h-256 w-256'
       };
       return sizes[this.size] || sizes.md;
     },
