@@ -1,20 +1,8 @@
 import {
-  initialize,
   registerFile,
   executeQuery,
 } from "./duckdb.ts"
 
-// Set the variables of dataset
-// could be initialized differently
-// Move to config file or UI interface later
-const CATEGORY_COLS = [
-  "year",
-  "month",
-  "disease"
-]
-const VALUE_COL = "mention_rate"
-const ID_COL = "cbscode"
-const PARQUET_FILE = "mentions_monthly.parquet"
 
 export interface RegionData {
   regionId: string
@@ -22,16 +10,15 @@ export interface RegionData {
 }
 
 
-export async function initializeRegionDataSet(): void {
-  await initialize()
-  await registerFile("dataset.parquet", `${PARQUET_FILE}`)
+export async function initializeRegionDataSet(fileName: string): void {
+  await registerFile("dataset.parquet", `${fileName}`)
 }
 
 
-export async function extractGroupsAndValues(): { [group: string]: string[] } {
+export async function extractFilterCategories(categoryCols: string[]): { [group: string]: string[] } {
   const out: { [group: string]: string[] } = {};
 
-  for (const category of CATEGORY_COLS) {
+  for (const category of categoryCols) {
     const query = `
       SELECT DISTINCT
         ${category}
@@ -46,15 +33,20 @@ export async function extractGroupsAndValues(): { [group: string]: string[] } {
   return out;
 }
 
-export async function getRegionData(selectedCategoryValues): RegionData[] {
+
+export async function getRegionData(
+  selectedCategoryValues,
+  idColumn,
+  valueColumn,
+): RegionData[] {
   const filter_clause = Object.entries(selectedCategoryValues)
     .map(([category_col, value]) => `${category_col} == '${value}'`)
     .join(" AND ")
 
   const query = `
     SELECT
-      ${ID_COL} AS regionId,
-      ${VALUE_COL} AS value
+      ${idColumn} AS regionId,
+      ${valueColumn} AS value
     FROM
       read_parquet('dataset.parquet')
     WHERE

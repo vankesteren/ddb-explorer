@@ -8,7 +8,7 @@
           v-if="isAppLoaded"
           :geojson="geojsonData"
           :regionData="regionData"
-          :regionId="'cbscode'"
+          :regionId="appConfig.idColumn"
           :colorScaleDomain="[0, 1]"
           class="w-full h-full"
         />
@@ -48,7 +48,7 @@
       >
         <div class="p-6" :class="{'opacity-0 lg:opacity-100': !isControlsOpen}">
           <h2 class="text-lg font-medium mb-4 text-gray-700">Map Controls</h2>
-          <div v-for="(values, group) in selectionCategoryData" :key="group" class="mb-6">
+          <div v-for="(values, group) in filterCategoryData" :key="group" class="mb-6">
             <Selection
               :label="group"
               :options="values"
@@ -71,21 +71,20 @@ import { fetchPublicFile } from './helpers.ts'
 import type { GeoJSON } from 'geojson'
 import {
   getRegionData,
-  extractGroupsAndValues,
+  extractFilterCategories,
   initializeRegionDataSet
 } from './parse_data'
-import type { RegionData } from './parse_data'
+import type { RegionData } from "/parse_data"
+import { initializeDuckDB } from "./duckdb"
+import { appConfig } from "./config"
 
 // reactive variables
 const geojsonData = ref<GeoJSON | null>(null)
 const regionData = ref<RegionData[] | null>(null)
-const selectionCategoryData = ref<{ [key: string]: string[] }>({});
-const selectedCategoryValues = ref<{ [key: string]: string }>({});
-const isControlsOpen = ref(false); // Controls panel state
+const filterCategoryData = ref<{ [key: string]: string[] }>({})
+const selectedFilterCategoryData = ref<{ [key: string]: string }>({})
+const isControlsOpen = ref(false)
 const isAppLoaded = ref(false)
-
-// constants
-const GEOJSON = "nl1869.geojson"
 
 async function fetchAndParseFile(url: string) {
   const response = await fetchPublicFile(url)
@@ -94,30 +93,36 @@ async function fetchAndParseFile(url: string) {
 }
 
 async function loadInitialData() {
-  const geoJson = await fetchAndParseFile(GEOJSON) as GeoJSON
-  await initializeRegionDataSet()
-  geojsonData.value = geoJson
-  selectionCategoryData.value = await extractGroupsAndValues()
+  geojsonData.value = await fetchAndParseFile(appConfig.files.geojson) as GeoJSON
+  await initializeRegionDataSet(appConfig.files.parquet)
+  filterCategoryData.value = await extractFilterCategories(appConfig.categoryColumns)
 }
 
 function handleSelectionChange(category: string, value: any) {
-  selectedCategoryValues.value[category] = value
+  selectedFilterCategoryData.value[category] = value
 }
 
-watch(selectedCategoryValues, async () => {
-  const allSelectedNow = Object.keys(selectionCategoryData.value).every(key =>
-    selectedCategoryValues.value[key] !== undefined &&
-    selectedCategoryValues.value[key] !== null &&
-    selectedCategoryValues.value[key] !== ''
+watch(selectedFilterCategoryData, async () => {
+  const allSelectedNow = Object.keys(filterCategoryData.value).every(key =>
+    selectedFilterCategoryData.value[key] !== undefined &&
+    selectedFilterCategoryData.value[key] !== null &&
+    selectedFilterCategoryData.value[key] !== ''
   );
 
   if (allSelectedNow) {
-    regionData.value = await getRegionData(selectedCategoryValues.value);
+    regionData.value = await getRegionData(
+      selectedFilterCategoryData.value,
+      appConfig.idColumn,
+      appConfig.valueColumn
+    )
     isAppLoaded.value = true
   }
 }, { deep: true })
 
 onMounted(() => {
-  loadInitialData()
+  (async () => {
+    await initializeDuckDB()
+    await loadInitialData()
+  })()
 })
 </script>

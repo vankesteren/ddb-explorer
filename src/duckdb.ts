@@ -21,7 +21,7 @@ let conn: duckdb.AsyncDuckDBConnection | null = null
 let worker: Worker | null = null
 
 
-export async function initialize(): Promise<void> {
+export async function initializeDuckDB(): Promise<void> {
     if (db) {
         return
     }
