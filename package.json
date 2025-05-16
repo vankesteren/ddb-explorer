@@ -13,10 +13,13 @@
   },
   "dependencies": {
     "@duckdb/duckdb-wasm": "^1.29.1-dev132.0",
+    "@popperjs/core": "^2.11.8",
     "@tailwindcss/vite": "^4.1.4",
     "@types/d3": "^7.4.3",
     "d3": "^7.9.0",
     "geojson": "^0.5.0",
+    "i": "^0.3.7",
+    "npm": "^11.4.0",
     "tailwindcss": "^4.1.4",
     "topojson": "^3.0.2",
     "vue": "^3.5.13"

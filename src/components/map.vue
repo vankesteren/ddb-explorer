@@ -5,6 +5,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watchEffect } from 'vue'
 import * as d3 from 'd3'
+import { createPopper } from '@popperjs/core'
 import type { RegionData } from "../parse_data.ts"
 import type { GeoJSON } from "geojson"
 
@@ -22,6 +23,19 @@ const props = withDefaults(defineProps<Props>(), {
 
 const svgRef = ref<SVGSVGElement | null>(null)
 const tooltipRef = ref<d3.Selection<HTMLDivElement, unknown, HTMLElement, any> | null>(null)
+const popperInstance = ref(null)
+const virtualElement = ref({
+  getBoundingClientRect: () => ({
+    width: 0,
+    height: 0,
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    x: 0,
+    y: 0,
+  }),
+})
 
 const renderMap = () => {
   const svgElement = svgRef.value
@@ -44,7 +58,7 @@ const renderMap = () => {
 
   if (!tooltipRef.value) {
     tooltipRef.value = d3.select("body").append("div")
-      .attr("class", "absolute invisible bg-white border border-gray-200 rounded-md p-2 pointer-events-none text-sm shadow-md")
+      .attr("class", "absolute bg-white border border-gray-200 rounded-md p-2 pointer-events-none text-sm shadow-md")
       .style("visibility", "hidden")
   }
   const tooltip = tooltipRef.value
@@ -67,7 +81,7 @@ const renderMap = () => {
     .join('path')
     .attr('d', pathGenerator)
     .attr('stroke', '#333')
-    .attr('stroke-width', 1)
+    .attr('stroke-width', 0.5)
     .attr('fill', 'transparent');
 
   paths.transition().duration(500).attr('fill', (d) => {
@@ -86,6 +100,7 @@ const renderMap = () => {
           return getColor(d)
         })
 
+      // Set tooltip content
       tooltip
         .style("visibility", "visible")
         .html(`
@@ -93,8 +108,47 @@ const renderMap = () => {
           <div class="text-gray-600 mt-1">${d.properties.name}</div>
           <div class="text-gray-600 mt-1">Value: ${regionDataMap.get(d.properties[regionId])?.value}</div>
         `)
-        .style("left", (event.pageX + 15) + "px")
-        .style("top", (event.pageY - 10) + "px")
+
+      // Update virtual element position
+      virtualElement.value.getBoundingClientRect = () => ({
+        width: 0,
+        height: 0,
+        top: event.clientY,
+        right: event.clientX,
+        bottom: event.clientY,
+        left: event.clientX,
+        x: event.clientX,
+        y: event.clientY,
+      })
+
+      if (popperInstance.value) {
+        popperInstance.value.update()
+      } else if (tooltip.node()) {
+        popperInstance.value = createPopper(virtualElement.value, tooltip.node(), {
+          placement: 'top',
+          modifiers: [
+            {
+              name: 'preventOverflow',
+              options: {
+                boundary: document.body,
+                padding: 10,
+              },
+            },
+            {
+              name: 'flip',
+              options: {
+                fallbackPlacements: ['bottom', 'right', 'left'],
+              },
+            },
+            {
+              name: 'offset',
+              options: {
+                offset: [0, 10],
+              },
+            },
+          ],
+        })
+      }
     })
     .on('mouseenter', function(event, d) {
       d3.select(this)
@@ -113,9 +167,21 @@ const renderMap = () => {
       tooltip.style("visibility", "hidden")
     })
     .on('mousemove', function(event) {
-      tooltip
-        .style("left", (event.pageX + 15) + "px")
-        .style("top", (event.pageY - 10) + "px")
+      virtualElement.value.getBoundingClientRect = () => ({
+        width: 0,
+        height: 0,
+        top: event.clientY,
+        right: event.clientX,
+        bottom: event.clientY,
+        left: event.clientX,
+        x: event.clientX,
+        y: event.clientY,
+      })
+
+      // Update Popper position
+      if (popperInstance.value) {
+        popperInstance.value.update()
+      }
     })
 }
 
@@ -136,6 +202,10 @@ onMounted(() => {
     if (tooltipRef.value) {
       tooltipRef.value.remove()
       tooltipRef.value = null
+    }
+    if (popperInstance.value) {
+      popperInstance.value.destroy()
+      popperInstance.value = null
     }
   }
 })

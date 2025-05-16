@@ -33,19 +33,20 @@
       <!-- Controls panel toggle button -->
       <button
         @click="isControlsOpen = !isControlsOpen"
-        class="bg-gray-800 text-white p-2 h-12 sm:self-center -ml-12 rounded-l-lg flex items-center justify-center shadow-lg"
+        class="bg-gray-800 text-white p-2 h-12 -ml-12 rounded-l-lg flex items-center
+        justify-center shadow-lg lg:hidden"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" :class="{'rotate-180': isControlsOpen}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" :class="{'rotate-180': !isControlsOpen}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
         </svg>
       </button>
 
       <!-- Controls panel content -->
       <div
-        class="bg-white h-full shadow-lg transition-all duration-300 ease-in-out overflow-y-auto"
+        class="bg-white h-full shadow-lg transition-all duration-300 ease-in-out overflow-y-auto lg:w-80"
         :class="isControlsOpen ? 'w-80' : 'w-0'"
       >
-        <div class="p-6" :class="{'opacity-0': !isControlsOpen}">
+        <div class="p-6" :class="{'opacity-0 lg:opacity-100': !isControlsOpen}">
           <h2 class="text-lg font-medium mb-4 text-gray-700">Map Controls</h2>
           <div v-for="(values, group) in selectionCategoryData" :key="group" class="mb-6">
             <Selection
