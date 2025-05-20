@@ -63,15 +63,20 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
+
+// components
 import Map from './components/map.vue'
 import LegendHistogram from './components/legend-histogram.vue'
 import Spinner from './components/spinner.vue'
 import Selection from './components/selection.vue'
+import DataImportWizard from "./components/wizard.vue"
+
 import { fetchPublicFile } from './helpers.ts'
 import type { GeoJSON } from 'geojson'
 import type { RegionData } from "./processors/types"
-import { appConfig } from "./config"
 import { ProcessorFactory } from "./processors/processor_factory"
+import { appConfig } from "./config"
+
 
 // reactive variables
 const geojsonData = ref<GeoJSON | null>(null)
