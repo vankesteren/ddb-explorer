@@ -69,14 +69,9 @@ import Spinner from './components/spinner.vue'
 import Selection from './components/selection.vue'
 import { fetchPublicFile } from './helpers.ts'
 import type { GeoJSON } from 'geojson'
-import {
-  getRegionData,
-  extractFilterCategories,
-  initializeRegionDataSet
-} from './parse_data'
-import type { RegionData } from "/parse_data"
-import { initializeDuckDB } from "./duckdb"
+import type { RegionData } from "./processors/types"
 import { appConfig } from "./config"
+import { ProcessorFactory } from "./processors/processor_factory"
 
 // reactive variables
 const geojsonData = ref<GeoJSON | null>(null)
@@ -86,16 +81,13 @@ const selectedFilterCategoryData = ref<{ [key: string]: string }>({})
 const isControlsOpen = ref(false)
 const isAppLoaded = ref(false)
 
+// create the data processor
+const dataProcessor = ProcessorFactory.create(appConfig.dataFileName)
+
 async function fetchAndParseFile(url: string) {
   const response = await fetchPublicFile(url)
   const data = await response.json()
   return data
-}
-
-async function loadInitialData() {
-  geojsonData.value = await fetchAndParseFile(appConfig.files.geojson) as GeoJSON
-  await initializeRegionDataSet(appConfig.files.parquet)
-  filterCategoryData.value = await extractFilterCategories(appConfig.categoryColumns)
 }
 
 function handleSelectionChange(category: string, value: any) {
@@ -110,7 +102,7 @@ watch(selectedFilterCategoryData, async () => {
   );
 
   if (allSelectedNow) {
-    regionData.value = await getRegionData(
+    regionData.value = await dataProcessor.getRegionData(
       selectedFilterCategoryData.value,
       appConfig.idColumn,
       appConfig.valueColumn
@@ -119,9 +111,15 @@ watch(selectedFilterCategoryData, async () => {
   }
 }, { deep: true })
 
+
+async function loadInitialData() {
+  geojsonData.value = await fetchAndParseFile(appConfig.geojsonFileName) as GeoJSON
+  await dataProcessor.initialize()
+  filterCategoryData.value = await dataProcessor.extractFilterCategories(appConfig.categoryColumns)
+}
+
 onMounted(() => {
   (async () => {
-    await initializeDuckDB()
     await loadInitialData()
   })()
 })
