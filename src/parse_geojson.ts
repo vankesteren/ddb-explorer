@@ -17,3 +17,11 @@ export function parseGeojson(geojsonString: string) {
       }
   }
 }
+
+export function extractPropertyKeys(geojson: any): string[] {
+  const firstFeature = geojson.type === 'FeatureCollection'
+    ? geojson.features[0]
+    : geojson;
+
+  return firstFeature.properties ? Object.keys(firstFeature.properties) : [];
+}

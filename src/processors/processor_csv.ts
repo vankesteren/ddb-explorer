@@ -6,15 +6,14 @@ import {
 import { Processor } from "./processor"
 import type { RegionData } from "./types"
 
-
-export class ParquetProcessor extends Processor {
+export class CsvProcessor extends Processor {
   constructor(fileName: string) {
     super(fileName);
   }
 
   async initialize(): Promise<void> {
     await initializeDuckDB()
-    await registerFile("dataset.parquet", this.fileName);
+    await registerFile("dataset.csv", this.fileName);
   }
 
   async extractFilterCategories(categoryCols: string[]): Promise<{ [group: string]: string[] }> {
@@ -24,7 +23,7 @@ export class ParquetProcessor extends Processor {
         SELECT DISTINCT
           CAST(${category} AS VARCHAR) AS ${category}
         FROM
-          read_parquet('dataset.parquet')
+          read_csv('dataset.csv')
       `;
       const result = await executeQuery(query)
       out[category] = result.map(item => item[category].toString())
@@ -40,17 +39,15 @@ export class ParquetProcessor extends Processor {
     const filter_clause = Object.entries(selectedCategoryValues)
       .map(([category_col, value]) => `${category_col} == '${value}'`)
       .join(" AND ");
-
     const query = `
       SELECT
         ${idColumn} AS regionId,
-        CAST(${valueColumn} AS DOUBLE) AS value
+        CAST(${valueColumn} AS VARCHAR) AS value
       FROM
-        read_parquet('dataset.parquet')
+        read_csv('dataset.csv')
       WHERE
         ${filter_clause}
     `;
-
     const out = await executeQuery(query);
     return out;
   }

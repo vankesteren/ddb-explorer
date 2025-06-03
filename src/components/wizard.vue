@@ -218,7 +218,10 @@
 
 <script setup lang="ts">
 import { readFileAsText } from "../helpers"
-import { parseGeojson } from "../parse_geojson"
+import {
+  parseGeojson,
+  extractPropertyKeys,
+} from "../parse_geojson"
 import type { AppConfig } from "../config"
 
 import { ref, reactive, computed } from 'vue'
@@ -282,10 +285,10 @@ const handleGeojsonFileSelect = async (event: Event) => {
       return
     }
 
-    geojsonFile.value = file
+    geojsonFile.value = geojson
     config.geojsonFileName = file.name
 
-    geojsonFields.value = ["id", "name", "code", "district", "region"]
+    geojsonFields.value = extractPropertyKeys(geojson)
   } catch (error: any) {
     errors.geojsonFile = "Error processing file: " + error.message
   }

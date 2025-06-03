@@ -22,12 +22,8 @@ export default defineComponent({
       type: Number,
       default: undefined
     },
-    minValue: {
-      type: Number,
-      default: undefined
-    },
-    maxValue: {
-      type: Number,
+    legendMinMax: {
+      type: Array as PropType<[number, number]>,
       default: undefined
     }
   },
@@ -52,8 +48,14 @@ export default defineComponent({
 
       if (values.length === 0) return
 
-      const minValue = props.minValue !== undefined ? props.minValue : d3.min(values)
-      const maxValue = props.maxValue !== undefined ? props.maxValue : d3.max(values)
+      // Determine minValue and maxValue based on legendMinMax prop or data
+      const minValue = props.legendMinMax !== undefined ? props.legendMinMax[0] : d3.min(values)
+      const maxValue = props.legendMinMax !== undefined ? props.legendMinMax[1] : d3.max(values)
+
+      if (minValue === undefined || maxValue === undefined) {
+        console.warn("Could not determine min/max values for color scale. Check regionData or legendMinMax prop.");
+        return;
+      }
 
       colorScale.value = d3.scaleLinear<string>().domain([minValue, maxValue]).range(['white', 'red'])
     }
@@ -93,14 +95,20 @@ export default defineComponent({
         .map(d => d.value)
         .filter((d): d is number => d !== undefined)
 
+      // Ensure colorScale domain is set before using it for histogram
+      if (colorScale.value.domain()[0] === undefined || colorScale.value.domain()[1] === undefined) {
+          console.warn("Color scale domain is not set. Cannot render histogram legend.");
+          return;
+      }
+
       const histogram = d3.histogram()
-        .domain(colorScale.value.domain())
+        .domain(colorScale.value.domain() as [number, number]) // Cast to ensure correct tuple type
         .thresholds(props.bins || 8)
 
       const bins = histogram(allValues)
 
       const xScale = d3.scaleLinear()
-        .domain(colorScale.value.domain())
+        .domain(colorScale.value.domain() as [number, number]) // Cast to ensure correct tuple type
         .range([legendMargin.left + 20, legendWidth - legendMargin.right - 10])
 
       const histHeight = 120
@@ -123,18 +131,18 @@ export default defineComponent({
         .data(bins)
         .join('rect')
         .attr('class', 'histogram-bar')
-        .attr('x', d => xScale(d.x0))
+        .attr('x', d => xScale(d.x0 || 0))
         .attr('y', d => yScale(d.length))
-        .attr('width', d => Math.max(0, xScale(d.x1) - xScale(d.x0) - 1))
+        .attr('width', d => Math.max(0, xScale(d.x1 || 0) - xScale(d.x0 || 0) - 1))
         .attr('height', d => legendHeight - legendMargin.bottom - 60 - yScale(d.length))
-        .attr('fill', d => colorScale.value((d.x0 + d.x1) / 2))
+        .attr('fill', d => colorScale.value((d.x0 || 0 + (d.x1 || 0)) / 2))
         .attr('opacity', 0.9)
         .attr('rx', 2)
         .attr('ry', 2)
 
       const xAxis = d3.axisBottom(xScale)
         .tickSize(3)
-        .tickFormat(d => formatTickValue(d))
+        .tickFormat(d => formatTickValue(d as number))
         .ticks(4)
 
       legendGroup.append('g')
@@ -176,12 +184,12 @@ export default defineComponent({
         .attr('ry', 4)
         .style('fill', `url(#${gradientId})`)
 
-      const [minValue, maxValue] = colorScale.value.domain()
+      const [minValue, maxValue] = colorScale.value.domain() as [number, number];
 
       legendGroup.append('text')
         .attr('x', legendMargin.left + 20)
         .attr('y', gradientY + gradientHeight + 15)
-        .attr('text-anchor', 'middle')
+        .attr('text-anchor', 'start')
         .attr('font-size', '10px')
         .attr('fill', '#555')
         .text(formatLabelValue(minValue))
@@ -189,7 +197,7 @@ export default defineComponent({
       legendGroup.append('text')
         .attr('x', legendMargin.left + 20 + gradientWidth)
         .attr('y', gradientY + gradientHeight + 15)
-        .attr('text-anchor', 'middle')
+        .attr('text-anchor', 'end')
         .attr('font-size', '10px')
         .attr('fill', '#555')
         .text(formatLabelValue(maxValue))
@@ -219,7 +227,8 @@ export default defineComponent({
       initializeChart()
     })
 
-    watch(() => props.regionData, () => {
+    // Watch for changes in regionData and legendMinMax
+    watch(() => [props.regionData, props.legendMinMax], () => {
       createDataMap()
       updateChart()
     }, { deep: true })

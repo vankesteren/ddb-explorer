@@ -9,7 +9,7 @@
           :geojson="geojsonData"
           :regionData="regionData"
           :regionId="appConfig.idColumn"
-          :colorScaleDomain="[0, 1]"
+          :colorScaleDomain="appConfig.legendMinMax"
           class="w-full h-full"
         />
         <div v-else class="w-full h-full flex items-center justify-center">
@@ -20,9 +20,8 @@
         <div v-if="isAppLoaded" class="absolute top-0">
           <LegendHistogram
             :regionData="regionData"
-            :title="'Mention Rate'"
-            :minValue="0"
-            :maxValue="1"
+            :title="appConfig.legendTitle"
+            :legendMinMax="appConfig.legendMinMax"
             />
         </div>
       </div>
