@@ -85,8 +85,7 @@ const selectedFilterCategoryData = ref<{ [key: string]: string }>({})
 const isControlsOpen = ref(false)
 const isAppLoaded = ref(false)
 
-// create the data processor
-const dataProcessor = ProcessorFactory.create(appConfig.dataFileName)
+let dataProcessor
 
 async function fetchAndParseFile(url: string) {
   const response = await fetchPublicFile(url)
@@ -96,6 +95,18 @@ async function fetchAndParseFile(url: string) {
 
 function handleSelectionChange(category: string, value: any) {
   selectedFilterCategoryData.value[category] = value
+}
+
+async function loadInitialData() {
+  // load geojson
+  geojsonData.value = await fetchAndParseFile(appConfig.geojsonFileName) as GeoJSON
+
+  // initialize data processor
+  dataProcessor = ProcessorFactory.create(appConfig.dataFileName)
+  await dataProcessor.initialize()
+
+  // load filter categories
+  filterCategoryData.value = await dataProcessor.extractFilterCategories(appConfig.categoryColumns)
 }
 
 watch(selectedFilterCategoryData, async () => {
@@ -115,12 +126,6 @@ watch(selectedFilterCategoryData, async () => {
   }
 }, { deep: true })
 
-
-async function loadInitialData() {
-  geojsonData.value = await fetchAndParseFile(appConfig.geojsonFileName) as GeoJSON
-  await dataProcessor.initialize()
-  filterCategoryData.value = await dataProcessor.extractFilterCategories(appConfig.categoryColumns)
-}
 
 onMounted(() => {
   (async () => {
