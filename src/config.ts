@@ -1,6 +1,7 @@
 const CATEGORY_COLUMNS = ["year", "month", "disease"]
 const VALUE_COLUMN = "mention_rate"
-const ID_COLUMN = "cbscode"
+const ID_COLUMN_GEOJSON = "cbscode"
+const ID_COLUMN_DATA_FILE = "cbscode"
 const DATA_FILE_NAME = "mentions_monthly.parquet"
 const GEOJSON_FILE_NAME = "nl1869.geojson"
 const LEGEND_MIN_MAX = [0, 1]
@@ -8,7 +9,8 @@ const LEGEND_TITLE = "Mention Rate"
 
 //const CATEGORY_COLUMNS = ["A", "B"]
 //const VALUE_COLUMN = "value"
-//const ID_COLUMN = "statcode"
+//const ID_COLUMN_GEOJSON = "statcode"
+//const ID_COLUMN_DATA_FILE = "statcode"
 //const DATA_FILE_NAME = "dataset.csv"
 //const GEOJSON_FILE_NAME = "nederland.geojson"
 //const LEGEND_MIN_MAX = [0, 100]
@@ -17,7 +19,8 @@ const LEGEND_TITLE = "Mention Rate"
 export interface AppConfig {
     categoryColumns: string[]
     valueColumn: string
-    idColumn: string
+    idColumnGeojson: string
+    idColumnDataFile: string
     dataFileName: string
     geojsonFileName: string
     legendMinMax: [number, number]
@@ -27,7 +30,8 @@ export interface AppConfig {
 export const appConfig: AppConfig = {
     categoryColumns: CATEGORY_COLUMNS,
     valueColumn: VALUE_COLUMN,
-    idColumn: ID_COLUMN,
+    idColumnGeojson: ID_COLUMN_GEOJSON,
+    idColumnDataFile: ID_COLUMN_DATA_FILE,
     dataFileName: DATA_FILE_NAME,
     geojsonFileName: GEOJSON_FILE_NAME,
     legendMinMax: LEGEND_MIN_MAX,

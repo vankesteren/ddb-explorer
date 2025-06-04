@@ -27,20 +27,29 @@ export async function getRegionData(
     readFunction: string,
     datasetName: string
   ): Promise<RegionData[]> {
-    const filter_clause = Object.entries(selectedCategoryValues)
-      .map(([category_col, value]) => `${category_col} == '${value}'`)
-      .join(" AND ");
+  const filter_clause = Object.entries(selectedCategoryValues)
+    .map(([category_col, value]) => `${category_col} == '${value}'`)
+    .join(" AND ");
 
-    const query = `
-      SELECT
-        ${idColumn} AS regionId,
-        CAST(${valueColumn} AS DOUBLE) AS value
-      FROM
-        ${readFunction}('${datasetName}')
-      WHERE
-        ${filter_clause}
-    `;
+  const query = `
+    SELECT
+      ${idColumn} AS regionId,
+      CAST(${valueColumn} AS DOUBLE) AS value
+    FROM
+      ${readFunction}('${datasetName}')
+    WHERE
+      ${filter_clause}
+  `;
 
-    const out = await executeQuery(query);
-    return out;
-  }
+  const out = await executeQuery(query);
+  return out;
+}
+
+export async function getColumnNames(
+  readFunction: string,
+  datasetName: string
+): Promise<string[]> {
+  const query = `SELECT * FROM ${readFunction}('${datasetName}') LIMIT 1`;
+  const result = await executeQuery(query);
+  return result.length > 0 ? Object.keys(result[0]) : [];
+}

@@ -3,7 +3,6 @@ import duckdb_wasm from '@duckdb/duckdb-wasm/dist/duckdb-mvp.wasm?url'
 import mvp_worker from '@duckdb/duckdb-wasm/dist/duckdb-browser-mvp.worker.js?url'
 import duckdb_wasm_next from '@duckdb/duckdb-wasm/dist/duckdb-eh.wasm?url'
 import eh_worker from '@duckdb/duckdb-wasm/dist/duckdb-browser-eh.worker.js?url'
-import { fetchPublicFile } from './helpers.ts'
 
 const MANUAL_BUNDLES = {
     mvp: {
@@ -45,18 +44,16 @@ export async function executeQuery(query: string): Promise<duckdb.DuckDBDataArra
 }
 
 
-export async function registerFile(registeredName: string, filename: string): Promise<void> {
-    if (!db) {
-        throw new Error('Database not initialized. Call initialize() first.')
-    }
-    const response = await fetchPublicFile(filename);
-    if (!response.ok) {
-        throw new Error(`Failed to fetch file from URL: ${url} - Status: ${response.status}`);
-    }
-    const arrayBuffer = await response.arrayBuffer();
-    const uint8Array = new Uint8Array(arrayBuffer);
-    await db.registerFileBuffer(registeredName, uint8Array);
+export async function registerFile(registeredName: string, file: File): Promise<void> {
+  if (!db) {
+    throw new Error('Database not initialized. Call initialize() first.')
+  }
+
+  const arrayBuffer = await file.arrayBuffer()
+  const uint8Array = new Uint8Array(arrayBuffer)
+  await db.registerFileBuffer(registeredName, uint8Array)
 }
+
 
 export async function close(): Promise<void> {
     if (conn) {

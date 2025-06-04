@@ -7,19 +7,20 @@ import type { RegionData } from "./types"
 import {
   extractFilterCategories,
   getRegionData,
+  getColumnNames
 } from "./helpers"
 
 const DATASET_NAME = "dataset.parquet"
 const READ_FUNCTION = "read_parquet"
 
 export class ParquetProcessor extends Processor {
-  constructor(fileName: string) {
-    super(fileName)
+  constructor(file: File) {
+    super(file)
   }
 
   async initialize(): Promise<void> {
     await initializeDuckDB()
-    await registerFile(DATASET_NAME, this.fileName)
+    await registerFile(DATASET_NAME, this.file)
   }
 
   async extractFilterCategories(categoryCols: string[]): Promise<{ [group: string]: string[] }> {
@@ -38,6 +39,10 @@ export class ParquetProcessor extends Processor {
       READ_FUNCTION,
       DATASET_NAME
     )
+  }
+
+  async getColumnNames() {
+    return getColumnNames(READ_FUNCTION, DATASET_NAME)
   }
 }
 

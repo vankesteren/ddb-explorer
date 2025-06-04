@@ -87,7 +87,7 @@
             @change="handleDataFileSelect"
             class="hidden"
             id="dataFileInput"
-            accept=".csv,.xlsx,.json"
+            accept=".parquet,.csv"
           />
           <label for="dataFileInput" class="cursor-pointer">
             <div class="flex flex-col items-center">
@@ -95,7 +95,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
               <span class="text-gray-600">Click to select a data file or drag and drop</span>
-              <span class="text-sm text-gray-500 mt-1">Supported formats: CSV, Excel, JSON</span>
+              <span class="text-sm text-gray-500 mt-1">Supported formats: Parquet, CSV</span>
             </div>
           </label>
           <div v-if="dataFile" class="mt-4 text-left">
@@ -165,6 +165,45 @@
       </div>
 
       <div v-if="currentStep === 4">
+        <label class="block text-gray-700 mb-3">Configure Legend:</label>
+
+        <div class="mb-4">
+          <label class="block text-gray-600 text-sm mb-1">Legend Title:</label>
+          <input
+            type="text"
+            v-model="config.legendTitle"
+            class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Enter legend title"
+          />
+          <p v-if="errors.legendTitle" class="text-red-500 text-sm mt-1">{{ errors.legendTitle }}</p>
+        </div>
+
+        <div class="mb-4">
+          <label class="block text-gray-600 text-sm mb-1">Legend Range:</label>
+          <div class="flex space-x-2">
+            <div class="flex-1">
+              <input
+                type="number"
+                v-model.number="config.legendMinMax[0]"
+                class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Min value"
+              />
+            </div>
+            <div class="flex-1">
+              <input
+                type="number"
+                v-model.number="config.legendMinMax[1]"
+                class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Max value"
+              />
+            </div>
+          </div>
+          <p class="text-sm text-gray-500 mt-1">Leave empty for auto-calculation from data</p>
+          <p v-if="errors.legendMinMax" class="text-red-500 text-sm mt-1">{{ errors.legendMinMax }}</p>
+        </div>
+      </div>
+
+      <div v-if="currentStep === 5">
         <div class="text-center py-4">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-green-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -179,6 +218,8 @@
               <li>ID Column: {{ config.idColumn }}</li>
               <li>Value Column: {{ config.valueColumn }}</li>
               <li>Category Columns: {{ config.categoryColumns.join(", ") || "None" }}</li>
+              <li>Legend Title: {{ config.legendTitle || "Not set" }}</li>
+              <li>Legend Range: {{ config.legendMinMax[0] !== null && config.legendMinMax[1] !== null ? `${config.legendMinMax[0]} - ${config.legendMinMax[1]}` : "Auto" }}</li>
             </ul>
           </div>
         </div>
@@ -223,6 +264,7 @@ import {
   extractPropertyKeys,
 } from "../parse_geojson"
 import type { AppConfig } from "../config"
+import { ProcessorFactory } from "../processors/processor_factory"
 
 import { ref, reactive, computed } from 'vue'
 
@@ -242,6 +284,10 @@ const steps = [
   },
   {
     title: 'Map Columns',
+    nextButtonText: 'Continue'
+  },
+  {
+    title: 'Configure Legend',
     nextButtonText: 'Confirm'
   },
   {
@@ -257,7 +303,9 @@ const config = reactive<AppConfig>({
   valueColumn: "",
   idColumn: "",
   dataFileName: "",
-  geojsonFileName: ""
+  geojsonFileName: "",
+  legendMinMax: [null, null],
+  legendTitle: ""
 })
 const errors = reactive<Record<string, string>>({})
 const geojsonFields = ref<string[]>([])
@@ -270,7 +318,7 @@ const availableCategoryColumns = computed(() => {
   )
 })
 
-const handleGeojsonFileSelect = async (event: Event) => {
+async function handleGeojsonFileSelect(event: Event) {
   errors.geojsonFile = ""
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
@@ -294,7 +342,7 @@ const handleGeojsonFileSelect = async (event: Event) => {
   }
 }
 
-const handleDataFileSelect = async (event: Event) => {
+async function handleDataFileSelect(event: Event) {
   errors.dataFile = ""
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
@@ -302,29 +350,30 @@ const handleDataFileSelect = async (event: Event) => {
 
   try {
     dataFile.value = file
+    const dataProcessor = await ProcessorFactory.create(file)
     config.dataFileName = file.name
 
-    dataFileColumns.value = ["region_id", "district_name", "value", "year", "category", "subcategory"]
+    dataFileColumns.value = await dataProcessor.getColumnNames()
   } catch (error: any) {
     errors.dataFile = "Error processing file: " + error.message
   }
 }
 
-const removeGeojsonFile = () => {
+function removeGeojsonFile() {
   geojsonFile.value = null
   config.geojsonFileName = ""
   const input = document.getElementById('geojsonFileInput') as HTMLInputElement
   if (input) input.value = ''
 }
 
-const removeDataFile = () => {
+function removeDataFile() {
   dataFile.value = null
   config.dataFileName = ""
   const input = document.getElementById('dataFileInput') as HTMLInputElement
   if (input) input.value = ''
 }
 
-const validateStep = () => {
+function validateStep() {
   for (const key in errors) {
     delete errors[key]
   }
@@ -353,17 +402,28 @@ const validateStep = () => {
       errors.valueColumn = "Please select a value column"
       return false
     }
+  } else if (currentStep.value === 4) {
+    if (!config.legendTitle.trim()) {
+      errors.legendTitle = "Please enter a legend title"
+      return false
+    }
+    if (config.legendMinMax[0] !== null && config.legendMinMax[1] !== null) {
+      if (config.legendMinMax[0] >= config.legendMinMax[1]) {
+        errors.legendMinMax = "Min value must be less than max value"
+        return false
+      }
+    }
   }
   return true
 }
 
-const prevStep = () => {
+function prevStep() {
   if (currentStep.value > 0) {
     currentStep.value--
   }
 }
 
-const nextStep = () => {
+function nextStep() {
   if (validateStep()) {
     if (currentStep.value < steps.length - 1) {
       currentStep.value++
@@ -373,17 +433,21 @@ const nextStep = () => {
 
 const emit = defineEmits(['import-complete'])
 
-const finishImport = () => {
-  emit('import-complete', {
+function finishImport() {
+  const appConfig: AppConfig = {
     categoryColumns: config.categoryColumns,
     valueColumn: config.valueColumn,
     idColumn: config.idColumn,
     dataFileName: config.dataFileName,
-    geojsonFileName: config.geojsonFileName
-  })
+    geojsonFileName: config.geojsonFileName,
+    legendMinMax: config.legendMinMax,
+    legendTitle: config.legendTitle
+  }
+
+  emit('import-complete', appConfig)
 }
 
-const resetWizard = () => {
+function resetWizard() {
   currentStep.value = 0
   geojsonFile.value = null
   idVariable.value = ""
@@ -393,6 +457,8 @@ const resetWizard = () => {
   config.idColumn = ""
   config.dataFileName = ""
   config.geojsonFileName = ""
+  config.legendMinMax = [null, null]
+  config.legendTitle = ""
   for (const key in errors) {
     delete errors[key]
   }

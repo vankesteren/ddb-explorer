@@ -1,4 +1,5 @@
 <template>
+  <!---<DataImportWizard />--->
   <div class="flex flex-col items-center justify-center min-h-screen w-full bg-gray-50 relative">
     <!-- Main content with map centered -->
     <div class="w-full h-screen flex flex-col">
@@ -8,7 +9,7 @@
           v-if="isAppLoaded"
           :geojson="geojsonData"
           :regionData="regionData"
-          :regionId="appConfig.idColumn"
+          :regionId="appConfig.idColumnGeojson"
           :colorScaleDomain="appConfig.legendMinMax"
           class="w-full h-full"
         />
@@ -87,23 +88,18 @@ const isAppLoaded = ref(false)
 
 let dataProcessor
 
-async function fetchAndParseFile(url: string) {
-  const response = await fetchPublicFile(url)
-  const data = await response.json()
-  return data
-}
-
 function handleSelectionChange(category: string, value: any) {
   selectedFilterCategoryData.value[category] = value
 }
 
 async function loadInitialData() {
   // load geojson
-  geojsonData.value = await fetchAndParseFile(appConfig.geojsonFileName) as GeoJSON
+  const geojsonFile = await fetchPublicFile(appConfig.geojsonFileName)
+  geojsonData.value = JSON.parse(await geojsonFile.text()) as GeoJSON
 
   // initialize data processor
-  dataProcessor = ProcessorFactory.create(appConfig.dataFileName)
-  await dataProcessor.initialize()
+  const dataFile = await fetchPublicFile(appConfig.dataFileName)
+  dataProcessor = await ProcessorFactory.create(dataFile)
 
   // load filter categories
   filterCategoryData.value = await dataProcessor.extractFilterCategories(appConfig.categoryColumns)
@@ -119,7 +115,7 @@ watch(selectedFilterCategoryData, async () => {
   if (allSelectedNow) {
     regionData.value = await dataProcessor.getRegionData(
       selectedFilterCategoryData.value,
-      appConfig.idColumn,
+      appConfig.idColumnDataFile,
       appConfig.valueColumn
     )
     isAppLoaded.value = true

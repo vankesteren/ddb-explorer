@@ -3,16 +3,22 @@ import { ParquetProcessor} from "./processor_parquet.ts"
 import { CsvProcessor } from "./processor_csv.ts"
 
 export class ProcessorFactory {
-  static create(fileName: string): Processor {
-    const fileExtension = fileName.split('.').pop()?.toLowerCase() || ''
+  static async create(file: File): Promise<Processor> {
+    const fileExtension = file.name.split('.').pop()?.toLowerCase() || '';
+    let processor: Processor;
 
     switch (fileExtension) {
       case 'parquet':
-        return new ParquetProcessor(fileName)
+        processor = new ParquetProcessor(file);
+        break;
       case 'csv':
-        return new CsvProcessor(fileName)
+        processor = new CsvProcessor(file);
+        break;
       default:
-        throw new Error(`Unsupported file type: ${fileExtension}`)
+        throw new Error(`Unsupported file type: ${fileExtension}`);
     }
+
+    await processor.initialize();
+    return processor;
   }
 }
