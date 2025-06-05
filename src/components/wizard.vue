@@ -59,24 +59,24 @@
 
       <div v-if="currentStep === 1">
         <label class="block text-gray-700 mb-3">
-          Select the ID variable from your geojson:
+          Select the ID from your geojson:
         </label>
         <div class="space-y-3">
-          <div v-for="field in geojsonFields" :key="field" class="flex items-center">
+          <div v-for="col in geojsonIdColumns" :key="col" class="flex items-center">
             <input
               type="radio"
-              :id="'field-' + field"
-              name="idVariable"
-              :value="field"
-              v-model="idVariable"
+              :id="'field-' + col"
+              name="idColumnGeojson"
+              :value="col"
+              v-model="config.idColumnGeojson"
               class="w-4 h-4 text-blue-600 focus:ring-blue-500"
             />
-            <label :for="'field-' + field" class="ml-2 text-gray-700">
-              {{ field }}
+            <label :for="'field-' + col" class="ml-2 text-gray-700">
+              {{ col }}
             </label>
           </div>
         </div>
-        <p v-if="errors.idVariable" class="text-red-500 text-sm mt-2">{{ errors.idVariable }}</p>
+        <p v-if="errors.idColumnGeojson" class="text-red-500 text-sm mt-2">{{ errors.idColumnGeojson }}</p>
       </div>
 
       <div v-if="currentStep === 2">
@@ -118,9 +118,9 @@
         <label class="block text-gray-700 mb-3">Map the columns:</label>
 
         <div class="mb-4">
-          <label class="block text-gray-600 text-sm mb-1">ID Column (matches with geojson {{ idVariable }}):</label>
+          <label class="block text-gray-600 text-sm mb-1">ID Column (matches with geojson {{ config.idColumnGeojson }}):</label>
           <select
-            v-model="config.idColumn"
+            v-model="config.idColumnDataFile"
             class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">-- Select column --</option>
@@ -128,7 +128,7 @@
               {{ column }}
             </option>
           </select>
-          <p v-if="errors.idColumn" class="text-red-500 text-sm mt-1">{{ errors.idColumn }}</p>
+          <p v-if="errors.idColumnDataFile" class="text-red-500 text-sm mt-1">{{ errors.idColumnDataFile }}</p>
         </div>
 
         <div class="mb-4">
@@ -173,7 +173,7 @@
             type="text"
             v-model="config.legendTitle"
             class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Enter legend title"
+            :placeholder="config.idColumnDataFile"
           />
           <p v-if="errors.legendTitle" class="text-red-500 text-sm mt-1">{{ errors.legendTitle }}</p>
         </div>
@@ -198,32 +198,10 @@
               />
             </div>
           </div>
-          <p class="text-sm text-gray-500 mt-1">Leave empty for auto-calculation from data</p>
           <p v-if="errors.legendMinMax" class="text-red-500 text-sm mt-1">{{ errors.legendMinMax }}</p>
         </div>
       </div>
 
-      <div v-if="currentStep === 5">
-        <div class="text-center py-4">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-green-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <h3 class="text-lg font-semibold mb-2">Ready to import!</h3>
-          <div class="bg-gray-50 p-3 rounded-md text-left">
-            <p class="text-sm text-gray-600">geojson: <span class="font-medium">{{ geojsonFile?.name }}</span></p>
-            <p class="text-sm text-gray-600">ID Variable: <span class="font-medium">{{ idVariable }}</span></p>
-            <p class="text-sm text-gray-600">Data File: <span class="font-medium">{{ dataFile?.name }}</span></p>
-            <p class="text-sm text-gray-600 mt-1">Mappings:</p>
-            <ul class="text-xs text-gray-500 mt-1 ml-4">
-              <li>ID Column: {{ config.idColumn }}</li>
-              <li>Value Column: {{ config.valueColumn }}</li>
-              <li>Category Columns: {{ config.categoryColumns.join(", ") || "None" }}</li>
-              <li>Legend Title: {{ config.legendTitle || "Not set" }}</li>
-              <li>Legend Range: {{ config.legendMinMax[0] !== null && config.legendMinMax[1] !== null ? `${config.legendMinMax[0]} - ${config.legendMinMax[1]}` : "Auto" }}</li>
-            </ul>
-          </div>
-        </div>
-      </div>
     </div>
 
     <div class="flex justify-between">
@@ -240,229 +218,196 @@
       <div v-else></div>
 
       <button
-        v-if="currentStep < steps.length - 1"
         @click="nextStep"
         class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
       >
         {{ steps[currentStep].nextButtonText || 'Continue' }}
       </button>
-      <button
-        v-else
-        @click="finishImport"
-        class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50"
-      >
-        Import Data
-      </button>
     </div>
   </div>
 </template>
 
-<script setup lang="ts">
+<script>
 import { readFileAsText } from "../helpers"
 import {
   parseGeojson,
   extractPropertyKeys,
 } from "../parse_geojson"
-import type { AppConfig } from "../config"
 import { ProcessorFactory } from "../processors/processor_factory"
 
-import { ref, reactive, computed } from 'vue'
-
-const currentStep = ref(0)
-const steps = [
-  {
-    title: 'Select geojson File',
-    nextButtonText: 'Continue'
+export default {
+  name: 'DataImportWizard',
+  emits: ['import-complete'],
+  data() {
+    return {
+      currentStep: 0,
+      steps: [
+        {
+          title: 'Select geojson File',
+          nextButtonText: 'Continue'
+        },
+        {
+          title: 'Select ID Variable',
+          nextButtonText: 'Continue'
+        },
+        {
+          title: 'Select Data File',
+          nextButtonText: 'Continue'
+        },
+        {
+          title: 'Map Columns',
+          nextButtonText: 'Continue'
+        },
+        {
+          title: 'Configure Legend',
+          nextButtonText: 'Ready to Import'
+        }
+      ],
+      geojsonFile: null,
+      dataFile: null,
+      config: {
+        categoryColumns: [],
+        valueColumn: "",
+        idColumnGeojson: "",
+        idColumnDataFile: "",
+        dataFileName: "",
+        geojsonFileName: "",
+        legendMinMax: [0, 1],
+        legendTitle: ""
+      },
+      errors: {},
+      geojsonIdColumns: [],
+      dataFileColumns: []
+    }
   },
-  {
-    title: 'Select ID Variable',
-    nextButtonText: 'Continue'
+  computed: {
+    availableCategoryColumns() {
+      return this.dataFileColumns.filter(col =>
+        col !== this.config.idColumnDataFile &&
+        col !== this.config.valueColumn
+      )
+    }
   },
-  {
-    title: 'Select Data File',
-    nextButtonText: 'Continue'
-  },
-  {
-    title: 'Map Columns',
-    nextButtonText: 'Continue'
-  },
-  {
-    title: 'Configure Legend',
-    nextButtonText: 'Confirm'
-  },
-  {
-    title: 'Confirmation'
-  }
-]
+  methods: {
+    async handleGeojsonFileSelect(event) {
+      delete this.errors.geojsonFile
+      const input = event.target
+      const file = input.files?.[0]
+      if (!file) return
 
-const geojsonFile = ref<File | null>(null)
-const idVariable = ref("")
-const dataFile = ref<File | null>(null)
-const config = reactive<AppConfig>({
-  categoryColumns: [],
-  valueColumn: "",
-  idColumn: "",
-  dataFileName: "",
-  geojsonFileName: "",
-  legendMinMax: [null, null],
-  legendTitle: ""
-})
-const errors = reactive<Record<string, string>>({})
-const geojsonFields = ref<string[]>([])
-const dataFileColumns = ref<string[]>([])
+      try {
+        const fileContent = await readFileAsText(file)
+        const { valid, geojson, errors: geojsonErrors } = parseGeojson(fileContent)
 
-const availableCategoryColumns = computed(() => {
-  return dataFileColumns.value.filter(col =>
-    col !== config.idColumn &&
-    col !== config.valueColumn
-  )
-})
+        if (!valid) {
+          this.errors.geojsonFile = geojsonErrors || "Invalid geojson file"
+          return
+        }
 
-async function handleGeojsonFileSelect(event: Event) {
-  errors.geojsonFile = ""
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
+        this.geojsonFile = geojson
+        this.config.geojsonFileName = file.name
 
-  try {
-    const fileContent = await readFileAsText(file)
-    const { valid, geojson, errors: geojsonErrors } = parseGeojson(fileContent)
-
-    if (!valid) {
-      errors.geojsonFile = geojsonErrors || "Invalid geojson file"
-      return
-    }
-
-    geojsonFile.value = geojson
-    config.geojsonFileName = file.name
-
-    geojsonFields.value = extractPropertyKeys(geojson)
-  } catch (error: any) {
-    errors.geojsonFile = "Error processing file: " + error.message
-  }
-}
-
-async function handleDataFileSelect(event: Event) {
-  errors.dataFile = ""
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
-
-  try {
-    dataFile.value = file
-    const dataProcessor = await ProcessorFactory.create(file)
-    config.dataFileName = file.name
-
-    dataFileColumns.value = await dataProcessor.getColumnNames()
-  } catch (error: any) {
-    errors.dataFile = "Error processing file: " + error.message
-  }
-}
-
-function removeGeojsonFile() {
-  geojsonFile.value = null
-  config.geojsonFileName = ""
-  const input = document.getElementById('geojsonFileInput') as HTMLInputElement
-  if (input) input.value = ''
-}
-
-function removeDataFile() {
-  dataFile.value = null
-  config.dataFileName = ""
-  const input = document.getElementById('dataFileInput') as HTMLInputElement
-  if (input) input.value = ''
-}
-
-function validateStep() {
-  for (const key in errors) {
-    delete errors[key]
-  }
-
-  if (currentStep.value === 0) {
-    if (!geojsonFile.value) {
-      errors.geojsonFile = "Please select a geojson file"
-      return false
-    }
-  } else if (currentStep.value === 1) {
-    if (!idVariable.value) {
-      errors.idVariable = "Please select an ID variable"
-      return false
-    }
-  } else if (currentStep.value === 2) {
-    if (!dataFile.value) {
-      errors.dataFile = "Please select a data file"
-      return false
-    }
-  } else if (currentStep.value === 3) {
-    if (!config.idColumn) {
-      errors.idColumn = "Please select an ID column"
-      return false
-    }
-    if (!config.valueColumn) {
-      errors.valueColumn = "Please select a value column"
-      return false
-    }
-  } else if (currentStep.value === 4) {
-    if (!config.legendTitle.trim()) {
-      errors.legendTitle = "Please enter a legend title"
-      return false
-    }
-    if (config.legendMinMax[0] !== null && config.legendMinMax[1] !== null) {
-      if (config.legendMinMax[0] >= config.legendMinMax[1]) {
-        errors.legendMinMax = "Min value must be less than max value"
-        return false
+        this.geojsonIdColumns = extractPropertyKeys(geojson)
+      } catch (error) {
+        this.errors.geojsonFile = "Error processing file: " + error.message
       }
-    }
+    },
+
+    async handleDataFileSelect(event) {
+      delete this.errors.dataFile
+      const input = event.target
+      const file = input.files?.[0]
+      if (!file) return
+
+      try {
+        this.dataFile = file
+        const dataProcessor = await ProcessorFactory.create(file)
+        this.config.dataFileName = file.name
+
+        this.dataFileColumns = await dataProcessor.getColumnNames()
+      } catch (error) {
+        this.errors.dataFile = "Error processing file: " + error.message
+      }
+    },
+
+    removeGeojsonFile() {
+      this.geojsonFile = null
+      this.config.geojsonFileName = ""
+      const input = document.getElementById('geojsonFileInput')
+      if (input) input.value = ''
+    },
+
+    removeDataFile() {
+      this.dataFile = null
+      this.config.dataFileName = ""
+      const input = document.getElementById('dataFileInput')
+      if (input) input.value = ''
+    },
+
+    validateStep() {
+      // Clear all errors
+      this.errors = {}
+
+      if (this.currentStep === 0) {
+        if (!this.geojsonFile) {
+          this.errors.geojsonFile = "Please select a geojson file"
+          return false
+        }
+      } else if (this.currentStep === 1) {
+        if (!this.config.idColumnGeojson) {
+          this.errors.idColumnGeojson = "Please select an ID variable"
+          return false
+        }
+      } else if (this.currentStep === 2) {
+        if (!this.dataFile) {
+          this.errors.dataFile = "Please select a data file"
+          return false
+        }
+      } else if (this.currentStep === 3) {
+        if (!this.config.idColumnDataFile) {
+          this.errors.idColumnDataFile = "Please select an ID column"
+          return false
+        }
+        this.config.legendTitle = this.config.idColumnDataFile.trim()
+        if (!this.config.valueColumn) {
+          this.errors.valueColumn = "Please select a value column"
+          return false
+        }
+      } else if (this.currentStep === 4) {
+        if (!this.config.legendTitle.trim()) {
+          this.errors.legendTitle = "Please enter a legend title"
+          return false
+        }
+        if (this.config.legendMinMax[0] !== null && this.config.legendMinMax[1] !== null) {
+          if (this.config.legendMinMax[0] >= this.config.legendMinMax[1]) {
+            this.errors.legendMinMax = "Min value must be less than max value"
+            return false
+          }
+        }
+      }
+      return true
+    },
+
+    prevStep() {
+      if (this.currentStep > 0) {
+        this.currentStep--
+      }
+    },
+
+    nextStep() {
+      if (this.validateStep()) {
+        if (this.currentStep < this.steps.length - 1) {
+          this.currentStep++
+        } else {
+          this.finishImport()
+        }
+      }
+    },
+
+    finishImport() {
+      console.log(this.config)
+      this.$emit('import-complete', this.config)
+    },
   }
-  return true
-}
-
-function prevStep() {
-  if (currentStep.value > 0) {
-    currentStep.value--
-  }
-}
-
-function nextStep() {
-  if (validateStep()) {
-    if (currentStep.value < steps.length - 1) {
-      currentStep.value++
-    }
-  }
-}
-
-const emit = defineEmits(['import-complete'])
-
-function finishImport() {
-  const appConfig: AppConfig = {
-    categoryColumns: config.categoryColumns,
-    valueColumn: config.valueColumn,
-    idColumn: config.idColumn,
-    dataFileName: config.dataFileName,
-    geojsonFileName: config.geojsonFileName,
-    legendMinMax: config.legendMinMax,
-    legendTitle: config.legendTitle
-  }
-
-  emit('import-complete', appConfig)
-}
-
-function resetWizard() {
-  currentStep.value = 0
-  geojsonFile.value = null
-  idVariable.value = ""
-  dataFile.value = null
-  config.categoryColumns = []
-  config.valueColumn = ""
-  config.idColumn = ""
-  config.dataFileName = ""
-  config.geojsonFileName = ""
-  config.legendMinMax = [null, null]
-  config.legendTitle = ""
-  for (const key in errors) {
-    delete errors[key]
-  }
-  geojsonFields.value = []
-  dataFileColumns.value = []
 }
 </script>
