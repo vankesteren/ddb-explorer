@@ -1,8 +1,29 @@
 <template>
-  <!--- <DataImportWizard @import-done="handleImport" /> --->
-  <div class="flex flex-col items-center justify-center min-h-screen w-full bg-gray-50 relative">
+  <div class="flex flex-col items-center justify-center min-h-screen w-full bg-gray-50 relative" :class="{ 'bg-gray-400': isDataImportWizardOpen }">
+    <!-- DataImportWizard overlay -->
+    <div
+      v-if="isDataImportWizardOpen"
+      class="fixed inset-0 z-100 bg-opacity-50 bg-white"
+    >
+      <div class="bg-white rounded-lg">
+        <div class="p-4 border-b border-gray-300 flex justify-between items-center">
+          <button
+            @click="toggleDataImportWizard"
+            class="text-gray-500 hover:text-gray-700 p-1"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div class="p-4">
+          <DataImportWizard @import-done="handleImport" />
+        </div>
+      </div>
+    </div>
+
     <!-- Main content with map centered -->
-    <div class="w-full h-screen flex flex-col">
+    <div class="w-full h-screen flex flex-col transition-all duration-300" :class="{ 'filter grayscale opacity-50': isDataImportWizardOpen }">
       <!-- Map container (takes full width/height) -->
       <div class="w-full h-full items-center p-5 lg:m-10">
         <Map
@@ -29,7 +50,7 @@
     </div>
 
     <!-- Slide-out controls panel -->
-    <div class="absolute right-0 top-0 h-full flex" :class="{ 'hidden': !isAppReady }">
+    <div class="absolute right-0 top-0 h-full flex transition-all duration-300" :class="{ 'hidden': !isAppReady, 'filter grayscale opacity-50': isDataImportWizardOpen }">
       <!-- Controls panel toggle button -->
       <button
         @click="toggleControlsPanel"
@@ -48,6 +69,8 @@
       >
         <div class="p-6" :class="{ 'opacity-0 lg:opacity-100': !isControlsPanelOpen }">
           <h2 class="text-lg font-medium mb-4 text-gray-700">Map Controls</h2>
+
+          <!-- Filter Controls -->
           <div v-for="(options, categoryName) in availableFilterOptions" :key="categoryName" class="mb-6">
             <Selection
               :label="categoryName"
@@ -55,8 +78,21 @@
               @selection-changed="(value) => updateSelectedFilter(categoryName, value)"
             />
           </div>
-        </div>
+
+          <!-- Data Import Button - Moved to bottom -->
+          <div class="mt-6 pt-4 border-t border-gray-200">
+            <button
+              @click="toggleDataImportWizard"
+              class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+              </svg>
+              Import Data
+            </button>
+          </div>
       </div>
+    </div>
     </div>
   </div>
 </template>
@@ -90,10 +126,15 @@ const selectedFilters = ref<{ [key: string]: string }>({})
 // UI state
 const isControlsPanelOpen = ref(false)
 const isAppReady = ref(false)
+const isDataImportWizardOpen = ref(false)
 
 // UI handlers
 function toggleControlsPanel() {
   isControlsPanelOpen.value = !isControlsPanelOpen.value
+}
+
+function toggleDataImportWizard() {
+  isDataImportWizardOpen.value = !isDataImportWizardOpen.value
 }
 
 function updateSelectedFilter(categoryName: string, value: any) {
@@ -103,14 +144,17 @@ function updateSelectedFilter(categoryName: string, value: any) {
 // Import handlers
 async function handleImport(importedConfig, importedGeojson, importedProcessor) {
   console.log("Starting import")
+
   isAppReady.value = false
+  isDataImportWizardOpen.value = false // Close wizard after import
 
   config.value = importedConfig
   geojsonData.value = importedGeojson
   dataProcessor.value = importedProcessor
 
-  selectedFilters.value = {}
   availableFilterOptions.value = await dataProcessor.value.extractFilterCategories(config.value.categoryColumns)
+  selectedFilters.value = {}
+  isAppReady.value = true
 }
 
 // App initialization

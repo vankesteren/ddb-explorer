@@ -45,7 +45,7 @@
           <div v-if="geojsonFile" class="mt-4 text-left">
             <div class="flex items-center">
               <span class="text-green-600">✓</span>
-              <span class="ml-2 text-gray-700">{{ geojsonFile.name }}</span>
+              <span class="ml-2 text-gray-700">{{ config.geojsonFileName }}</span>
               <button
                 @click.prevent="removeGeojsonFile"
                 class="ml-auto text-red-500 hover:text-red-700"
@@ -313,7 +313,7 @@ export default {
 
         this.geojsonFile = geojson
         this.config.geojsonFileName = file.name
-
+        console.log(file.name)
         this.geojsonIdColumns = extractPropertyKeys(geojson)
       } catch (error) {
         this.errors.geojsonFile = "Error processing file: " + error.message
