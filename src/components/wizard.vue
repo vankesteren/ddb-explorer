@@ -21,6 +21,7 @@
       </div>
     </div>
 
+    <!--- STEP: SELECT GEOJSON --->
     <div class="bg-white rounded-lg shadow-sm p-6 mb-6 border border-gray-200">
       <div v-if="currentStep === 0">
         <label class="block text-gray-700 mb-2">Select a geojson file:</label>
@@ -57,6 +58,7 @@
         <p v-if="errors.geojsonFile" class="text-red-500 text-sm mt-2">{{ errors.geojsonFile }}</p>
       </div>
 
+      <!--- STEP: SELECT ID FROM GEOJSON --->
       <div v-if="currentStep === 1">
         <label class="block text-gray-700 mb-3">
           Select the ID from your geojson:
@@ -79,6 +81,7 @@
         <p v-if="errors.idColumnGeojson" class="text-red-500 text-sm mt-2">{{ errors.idColumnGeojson }}</p>
       </div>
 
+      <!--- STEP: SELECT DATA FILE --->
       <div v-if="currentStep === 2">
         <label class="block text-gray-700 mb-2">Select a data file:</label>
         <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors">
@@ -98,10 +101,10 @@
               <span class="text-sm text-gray-500 mt-1">Supported formats: Parquet, CSV</span>
             </div>
           </label>
-          <div v-if="dataFile" class="mt-4 text-left">
+          <div v-if="config.dataFileName !== ''" class="mt-4 text-left">
             <div class="flex items-center">
               <span class="text-green-600">✓</span>
-              <span class="ml-2 text-gray-700">{{ dataFile.name }}</span>
+              <span class="ml-2 text-gray-700">{{ config.dataFileName }}</span>
               <button
                 @click.prevent="removeDataFile"
                 class="ml-auto text-red-500 hover:text-red-700"
@@ -114,6 +117,7 @@
         <p v-if="errors.dataFile" class="text-red-500 text-sm mt-2">{{ errors.dataFile }}</p>
       </div>
 
+      <!--- STEP: SELECT COLUMNS DATAFILE --->
       <div v-if="currentStep === 3">
         <label class="block text-gray-700 mb-3">Map the columns:</label>
 
@@ -164,6 +168,7 @@
         </div>
       </div>
 
+      <!--- STEP: CONFIGURE LEGEND --->
       <div v-if="currentStep === 4">
         <label class="block text-gray-700 mb-3">Configure Legend:</label>
 
@@ -173,7 +178,7 @@
             type="text"
             v-model="config.legendTitle"
             class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            :placeholder="config.idColumnDataFile"
+            :placeholder="config.valueColumn"
           />
           <p v-if="errors.legendTitle" class="text-red-500 text-sm mt-1">{{ errors.legendTitle }}</p>
         </div>
@@ -236,35 +241,37 @@ import {
 import { ProcessorFactory } from "../processors/processor_factory"
 
 export default {
-  name: 'DataImportWizard',
-  emits: ['import-complete'],
+  name: "DataImportWizard",
+  emits: [
+    "import-done",
+  ],
   data() {
     return {
       currentStep: 0,
       steps: [
         {
-          title: 'Select geojson File',
-          nextButtonText: 'Continue'
+          title: "Select geojson File",
+          nextButtonText: "Continue"
         },
         {
-          title: 'Select ID Variable',
-          nextButtonText: 'Continue'
+          title: "Select ID Variable",
+          nextButtonText: "Continue"
         },
         {
-          title: 'Select Data File',
-          nextButtonText: 'Continue'
+          title: "Select Data File",
+          nextButtonText: "Continue"
         },
         {
-          title: 'Map Columns',
-          nextButtonText: 'Continue'
+          title: "Map Columns",
+          nextButtonText: "Continue"
         },
         {
-          title: 'Configure Legend',
-          nextButtonText: 'Ready to Import'
+          title: "Configure Legend",
+          nextButtonText: "Ready to Import"
         }
       ],
       geojsonFile: null,
-      dataFile: null,
+      dataProcessor: null,
       config: {
         categoryColumns: [],
         valueColumn: "",
@@ -320,11 +327,10 @@ export default {
       if (!file) return
 
       try {
-        this.dataFile = file
-        const dataProcessor = await ProcessorFactory.create(file)
+        this.dataProcessor = await ProcessorFactory.create(file)
         this.config.dataFileName = file.name
 
-        this.dataFileColumns = await dataProcessor.getColumnNames()
+        this.dataFileColumns = await this.dataProcessor.getColumnNames()
       } catch (error) {
         this.errors.dataFile = "Error processing file: " + error.message
       }
@@ -333,15 +339,15 @@ export default {
     removeGeojsonFile() {
       this.geojsonFile = null
       this.config.geojsonFileName = ""
-      const input = document.getElementById('geojsonFileInput')
-      if (input) input.value = ''
+      const input = document.getElementById("geojsonFileInput")
+      if (input) input.value = ""
     },
 
     removeDataFile() {
-      this.dataFile = null
+      this.dataProcessor = null // CREATE A METHOD TO DESTROY PROCESSORS
       this.config.dataFileName = ""
-      const input = document.getElementById('dataFileInput')
-      if (input) input.value = ''
+      const input = document.getElementById("dataFileInput")
+      if (input) input.value = ""
     },
 
     validateStep() {
@@ -359,7 +365,7 @@ export default {
           return false
         }
       } else if (this.currentStep === 2) {
-        if (!this.dataFile) {
+        if (this.config.dataFileName === "") {
           this.errors.dataFile = "Please select a data file"
           return false
         }
@@ -368,7 +374,7 @@ export default {
           this.errors.idColumnDataFile = "Please select an ID column"
           return false
         }
-        this.config.legendTitle = this.config.idColumnDataFile.trim()
+        this.config.legendTitle = this.config.valueColumn.trim()
         if (!this.config.valueColumn) {
           this.errors.valueColumn = "Please select a value column"
           return false
@@ -405,8 +411,7 @@ export default {
     },
 
     finishImport() {
-      console.log(this.config)
-      this.$emit('import-complete', this.config)
+      this.$emit("import-done", this.config, this.geojsonFile,this.dataProcessor)
     },
   }
 }

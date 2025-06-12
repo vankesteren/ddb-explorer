@@ -10,21 +10,23 @@ import {
   getColumnNames
 } from "./helpers"
 
-const DATASET_NAME = "dataset.csv"
 const READ_FUNCTION = "read_csv"
 
 export class CsvProcessor extends Processor {
+  private readonly datasetName: string
+
   constructor(file: File) {
     super(file)
+    this.datasetName = `dataset_${crypto.randomUUID()}.csv`
   }
 
   async initialize(): Promise<void> {
     await initializeDuckDB()
-    await registerFile(DATASET_NAME, this.file)
+    await registerFile(this.datasetName, this.file)
   }
 
   async extractFilterCategories(categoryCols: string[]): Promise<{ [group: string]: string[] }> {
-    return extractFilterCategories(categoryCols, READ_FUNCTION, DATASET_NAME)
+    return extractFilterCategories(categoryCols, READ_FUNCTION, this.datasetName)
   }
 
   async getRegionData(
@@ -37,12 +39,11 @@ export class CsvProcessor extends Processor {
       idColumn,
       valueColumn,
       READ_FUNCTION,
-      DATASET_NAME
+      this.datasetName
     )
   }
 
   async getColumnNames() {
-    return getColumnNames(READ_FUNCTION, DATASET_NAME)
+    return getColumnNames(READ_FUNCTION, this.datasetName)
   }
 }
-

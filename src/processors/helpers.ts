@@ -27,6 +27,7 @@ export async function getRegionData(
     readFunction: string,
     datasetName: string
   ): Promise<RegionData[]> {
+
   const filter_clause = Object.entries(selectedCategoryValues)
     .map(([category_col, value]) => `${category_col} == '${value}'`)
     .join(" AND ");

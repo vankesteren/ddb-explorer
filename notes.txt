@@ -1,0 +1,4 @@
+# todo
+
+- Make files added to data processors unique
+- Add and implement a destroy method to prevent memory leaks
