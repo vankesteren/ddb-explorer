@@ -24,7 +24,8 @@
     <!--- STEP: SELECT GEOJSON --->
     <div class="bg-white rounded-lg shadow-sm p-6 mb-6 border border-gray-200">
       <div v-if="currentStep === 0">
-        <label class="block text-gray-700 mb-2">Select a geojson file:</label>
+        <label class="block text-gray-700 mb-2">Select a GeoJSON file. This file will be the basis
+          for the map.</label>
         <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors">
           <input
             type="file"
@@ -61,7 +62,9 @@
       <!--- STEP: SELECT ID FROM GEOJSON --->
       <div v-if="currentStep === 1">
         <label class="block text-gray-700 mb-3">
-          Select the ID from your geojson:
+          Select the ID from your GeoJSON file. This ID will be used as the ID to identify the
+          regions of the regions of the map.
+
         </label>
         <div class="space-y-3">
           <div v-for="col in geojsonIdColumns" :key="col" class="flex items-center">
@@ -83,7 +86,9 @@
 
       <!--- STEP: SELECT DATA FILE --->
       <div v-if="currentStep === 2">
-        <label class="block text-gray-700 mb-2">Select a data file:</label>
+        <label class="block text-gray-700 mb-2">The selected data file should contain
+          contain the an ID and a value column. The ID will be used to map the value to a
+          region in the GeoJSON, the value will be used to color the region.</label>
         <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors">
           <input
             type="file"
@@ -250,7 +255,7 @@ export default {
       currentStep: 0,
       steps: [
         {
-          title: "Select geojson File",
+          title: "Select GeoJSON File",
           nextButtonText: "Continue"
         },
         {
