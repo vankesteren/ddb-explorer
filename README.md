@@ -55,10 +55,6 @@ npm install
 npm run dev
 ```
 
-## Usage
-
-The application allows you to visualize geographic data by combining GeoJSON boundary files with your own datasets. Simply upload your files using the Data Importer and explore your data through interactive maps.
-
 ## Contact
 
 This is a project by the [ODISSEI Social Data Science (SoDa)](https://odissei-soda.nl) team.
