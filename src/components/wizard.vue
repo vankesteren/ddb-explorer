@@ -22,74 +22,76 @@
     </div>
 
     <!--- STEP: SELECT GEOJSON --->
-    <div class="bg-white rounded-lg shadow-sm p-6 mb-6 border border-gray-200">
-      <div v-if="currentStep === 0">
-        <label class="block text-gray-700 mb-2">Select a GeoJSON file. This file will be the basis
-          for the map.</label>
-        <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors">
-          <input
-            type="file"
-            @change="handleGeojsonFileSelect"
-            class="hidden"
-            id="geojsonFileInput"
-            accept=".geojson,application/geo+json"
-          />
-          <label for="geojsonFileInput" class="cursor-pointer">
-            <div class="flex flex-col items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
-              <span class="text-gray-600">Click to select a geojson file or drag and drop</span>
-              <span class="text-sm text-gray-500 mt-1">Supported format: geojson</span>
-            </div>
-          </label>
-          <div v-if="geojsonFile" class="mt-4 text-left">
-            <div class="flex items-center">
-              <span class="text-green-600">✓</span>
-              <span class="ml-2 text-gray-700">{{ config.geojsonFileName }}</span>
-              <button
-                @click.prevent="removeGeojsonFile"
-                class="ml-auto text-red-500 hover:text-red-700"
-              >
-                Remove
-              </button>
-            </div>
+  <div class="bg-white rounded-lg shadow-sm p-6 mb-6 border border-gray-200">
+    <div v-if="currentStep === 0">
+      <label class="block text-gray-700 mb-2">Select a GeoJSON file. This file will be the basis
+        for the map.</label>
+      <div
+        @drop.prevent="e => handleGeojsonFileSelect({target: {files: e.dataTransfer.files}})"
+        @dragover.prevent
+        class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors"
+      >
+        <input
+          type="file"
+          @change="handleGeojsonFileSelect"
+          class="hidden"
+          id="geojsonFileInput"
+          accept=".geojson,.json,application/geo+json,application/json"
+        />
+        <label for="geojsonFileInput" class="cursor-pointer">
+          <div class="flex flex-col items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            <span class="text-gray-600">Click to select a geojson file or drag and drop</span>
+            <span class="text-sm text-gray-500 mt-1">Supported format: geojson</span>
           </div>
-        </div>
-        <p v-if="errors.geojsonFile" class="text-red-500 text-sm mt-2">{{ errors.geojsonFile }}</p>
-      </div>
-
-      <!--- STEP: SELECT ID FROM GEOJSON --->
-      <div v-if="currentStep === 1">
-        <label class="block text-gray-700 mb-3">
-          Select the ID from your GeoJSON file. This ID will be used as the ID to identify the
-          regions of the regions of the map.
-
         </label>
-        <div class="space-y-3">
-          <div v-for="col in geojsonIdColumns" :key="col" class="flex items-center">
-            <input
-              type="radio"
-              :id="'field-' + col"
-              name="idColumnGeojson"
-              :value="col"
-              v-model="config.idColumnGeojson"
-              class="w-4 h-4 text-blue-600 focus:ring-blue-500"
-            />
-            <label :for="'field-' + col" class="ml-2 text-gray-700">
-              {{ col }}
-            </label>
+        <div v-if="geojsonFile" class="mt-4 text-left">
+          <div class="flex items-center">
+            <span class="text-green-600">✓</span>
+            <span class="ml-2 text-gray-700">{{ config.geojsonFileName }}</span>
+            <button
+              @click.prevent="removeGeojsonFile"
+              class="ml-auto text-red-500 hover:text-red-700"
+            >
+              Remove
+            </button>
           </div>
         </div>
-        <p v-if="errors.idColumnGeojson" class="text-red-500 text-sm mt-2">{{ errors.idColumnGeojson }}</p>
       </div>
+      <p v-if="errors.geojsonFile" class="text-red-500 text-sm mt-2">{{ errors.geojsonFile }}</p>
+    </div>
+
+    <!--- STEP: SELECT ID FROM GEOJSON --->
+    <div v-if="currentStep === 1">
+      <label class="block text-gray-700 mb-3">
+        Select the ID from your GeoJSON file. This ID will be used to identify the regions on the map.
+      </label>
+      <div class="relative">
+        <select
+          v-model="config.idColumnGeojson"
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white max-h-[100px] overflow-y-auto"
+        >
+          <option value="">-- Select column --</option>
+          <option v-for="col in geojsonIdColumns" :key="col" :value="col">
+            {{ col }}
+          </option>
+        </select>
+      </div>
+      <p v-if="errors.idColumnGeojson" class="text-red-500 text-sm mt-2">{{ errors.idColumnGeojson }}</p>
+    </div>
 
       <!--- STEP: SELECT DATA FILE --->
       <div v-if="currentStep === 2">
-        <label class="block text-gray-700 mb-2">The selected data file should contain
-          contain the an ID and a value column. The ID will be used to map the value to a
-          region in the GeoJSON, the value will be used to color the region.</label>
-        <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors">
+        <label class="block text-gray-700 mb-2">
+          The selected data file should contain an ID column and a value column. The ID will be used to map the value to a region in the GeoJSON, and the value will be used to color the region.
+        </label>
+        <div
+          @drop.prevent="e => handleDataFileSelect({target: {files: e.dataTransfer.files}})"
+          @dragover.prevent
+          class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors"
+        >
           <input
             type="file"
             @change="handleDataFileSelect"
@@ -318,7 +320,6 @@ export default {
 
         this.geojsonFile = geojson
         this.config.geojsonFileName = file.name
-        console.log(file.name)
         this.geojsonIdColumns = extractPropertyKeys(geojson)
       } catch (error) {
         this.errors.geojsonFile = "Error processing file: " + error.message
