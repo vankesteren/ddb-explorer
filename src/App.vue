@@ -153,7 +153,9 @@ async function handleImport(importedConfig, importedGeojson, importedProcessor) 
   dataProcessor.value = importedProcessor
 
   availableFilterOptions.value = await dataProcessor.value.extractFilterCategories(config.value.categoryColumns)
-  selectedFilters.value = {}
+  for (const [categoryName, values] of Object.entries(availableFilterOptions.value)) {
+    updateSelectedFilter(categoryName, values[0])
+  }
   isAppReady.value = true
 }
 
@@ -177,6 +179,7 @@ watch(selectedFilters, async () => {
   )
 
   if (allFiltersSelected && dataProcessor.value) {
+    console.log("Fetching new region data")
     regionData.value = await dataProcessor.value.getRegionData(
       selectedFilters.value,
       config.value.idColumnDataFile,
