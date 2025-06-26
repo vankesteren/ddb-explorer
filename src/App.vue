@@ -39,7 +39,7 @@
         </div>
 
         <!-- Legend in bottom left -->
-        <div v-if="isAppReady" class="absolute top-0">
+        <div v-if="isAppReady && dataProcessor" class="absolute top-0">
           <LegendHistogram
             :regionData="regionData"
             :title="config.legendTitle"
@@ -71,12 +71,17 @@
           <h2 class="text-lg font-medium mb-4 text-gray-700">Map Controls</h2>
 
           <!-- Filter Controls -->
-          <div v-for="(options, categoryName) in availableFilterOptions" :key="categoryName" class="mb-6">
-            <Selection
-              :label="categoryName"
-              :options="options"
-              @selection-changed="(value) => updateSelectedFilter(categoryName, value)"
-            />
+          <div v-if="availableFilterOptions && Object.keys(availableFilterOptions).length > 0">
+            <div v-for="(options, categoryName) in availableFilterOptions" :key="categoryName" class="mb-6">
+              <Selection
+                :label="categoryName"
+                :options="options"
+                @selection-changed="(value) => updateSelectedFilter(categoryName, value)"
+              />
+            </div>
+          </div>
+          <div v-else class="text-gray-500">
+            No filter options available
           </div>
 
           <!-- Data Import Button - Moved to bottom -->
@@ -141,6 +146,19 @@ function updateSelectedFilter(categoryName: string, value: any) {
   selectedFilters.value[categoryName] = value
 }
 
+
+async function setMapControls(dataProcessor) {
+  if (dataProcessor) {
+    availableFilterOptions.value = await dataProcessor.extractFilterCategories(config.value.categoryColumns)
+    for (const [categoryName, values] of Object.entries(availableFilterOptions.value)) {
+      updateSelectedFilter(categoryName, values[0])
+    }
+  } else {
+    availableFilterOptions.value = null
+  }
+}
+
+
 // Import handlers
 async function handleImport(importedConfig, importedGeojson, importedProcessor) {
   console.log("Starting import")
@@ -151,11 +169,8 @@ async function handleImport(importedConfig, importedGeojson, importedProcessor) 
   config.value = importedConfig
   geojsonData.value = importedGeojson
   dataProcessor.value = importedProcessor
+  await setMapControls(dataProcessor.value)
 
-  availableFilterOptions.value = await dataProcessor.value.extractFilterCategories(config.value.categoryColumns)
-  for (const [categoryName, values] of Object.entries(availableFilterOptions.value)) {
-    updateSelectedFilter(categoryName, values[0])
-  }
   isAppReady.value = true
 }
 
@@ -166,8 +181,7 @@ async function initializeApp() {
 
   const dataFile = await fetchPublicFile(config.value.dataFileName)
   dataProcessor.value = await ProcessorFactory.create(dataFile)
-
-  availableFilterOptions.value = await dataProcessor.value.extractFilterCategories(config.value.categoryColumns)
+  await setMapControls(dataProcessor.value)
 }
 
 // Data loading based on filter selection

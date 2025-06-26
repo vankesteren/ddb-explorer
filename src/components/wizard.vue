@@ -22,46 +22,58 @@
     </div>
 
     <!--- STEP: SELECT GEOJSON --->
-  <div class="bg-white rounded-lg shadow-sm p-6 mb-6 border border-gray-200">
-    <div v-if="currentStep === 0">
-      <label class="block text-gray-700 mb-2">Select a GeoJSON file. This file will be the basis
-        for the map.</label>
-      <div
-        @drop.prevent="e => handleGeojsonFileSelect({target: {files: e.dataTransfer.files}})"
-        @dragover.prevent
-        class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors"
-      >
-        <input
-          type="file"
-          @change="handleGeojsonFileSelect"
-          class="hidden"
-          id="geojsonFileInput"
-          accept=".geojson,.json,application/geo+json,application/json"
-        />
-        <label for="geojsonFileInput" class="cursor-pointer">
-          <div class="flex flex-col items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-            </svg>
-            <span class="text-gray-600">Click to select a geojson file or drag and drop</span>
-            <span class="text-sm text-gray-500 mt-1">Supported format: geojson</span>
-          </div>
-        </label>
-        <div v-if="geojsonFile" class="mt-4 text-left">
-          <div class="flex items-center">
-            <span class="text-green-600">✓</span>
-            <span class="ml-2 text-gray-700">{{ config.geojsonFileName }}</span>
-            <button
-              @click.prevent="removeGeojsonFile"
-              class="ml-auto text-red-500 hover:text-red-700"
-            >
-              Remove
-            </button>
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-6 border border-gray-200">
+      <div v-if="currentStep === 0">
+        <label class="block text-gray-700 mb-2">Select a GeoJSON file. This file will be the basis
+          for the map.</label>
+        <div
+          @drop.prevent="e => handleGeojsonFileSelect({target: {files: e.dataTransfer.files}})"
+          @dragover.prevent
+          class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors"
+        >
+          <input
+            type="file"
+            @change="handleGeojsonFileSelect"
+            class="hidden"
+            id="geojsonFileInput"
+            accept=".geojson,.json,application/geo+json,application/json"
+          />
+          <label for="geojsonFileInput" class="cursor-pointer">
+            <div class="flex flex-col items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+              <span class="text-gray-600">Click to select a geojson file or drag and drop</span>
+              <span class="text-sm text-gray-500 mt-1">Supported format: geojson</span>
+            </div>
+          </label>
+          <div v-if="geojsonFile" class="mt-4 text-left">
+            <div class="flex items-center">
+              <span class="text-green-600">✓</span>
+              <span class="ml-2 text-gray-700">{{ config.geojsonFileName }}</span>
+              <button
+                @click.prevent="removeGeojsonFile"
+                class="ml-auto text-red-500 hover:text-red-700"
+              >
+                Remove
+              </button>
+            </div>
           </div>
         </div>
+        <p v-if="errors.geojsonFile" class="text-red-500 text-sm mt-2">{{ errors.geojsonFile }}</p>
+
+        <div v-if="geojsonFile" class="mt-4">
+          <label class="flex items-center">
+            <input
+              type="checkbox"
+              v-model="geojsonOnly"
+              class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <span class="ml-2 text-gray-700">Continue with GeoJSON only (render the map do not apply
+            colorin)</span>
+          </label>
+        </div>
       </div>
-      <p v-if="errors.geojsonFile" class="text-red-500 text-sm mt-2">{{ errors.geojsonFile }}</p>
-    </div>
 
     <!--- STEP: SELECT ID FROM GEOJSON --->
     <div v-if="currentStep === 1">
@@ -291,7 +303,8 @@ export default {
       },
       errors: {},
       geojsonIdColumns: [],
-      dataFileColumns: []
+      dataFileColumns: [],
+      geojsonOnly: false,
     }
   },
   computed: {
@@ -361,6 +374,7 @@ export default {
       this.errors = {}
 
       if (this.currentStep === 0) {
+        if (this.geojsonOnly) { this.finishImport() }
         if (!this.geojsonFile) {
           this.errors.geojsonFile = "Please select a geojson file"
           return false
