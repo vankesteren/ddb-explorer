@@ -70,7 +70,7 @@
               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
             />
             <span class="ml-2 text-gray-700">Continue with GeoJSON only (render the map do not apply
-            colorin)</span>
+            coloring)</span>
           </label>
         </div>
       </div>
