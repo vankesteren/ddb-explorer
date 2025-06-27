@@ -55,6 +55,20 @@ npm install
 npm run dev
 ```
 
+## Embedding 
+
+If you want to embed this application into your own website you can do so by including it into an iframe, like so:
+
+```html
+<iframe 
+  src="https://sodascience.github.io/map-explorer/"
+  width="100%" 
+  height="800"
+  frameborder="0"
+  allowfullscreen>
+</iframe>
+```
+
 ## Contact
 
 This is a project by the [ODISSEI Social Data Science (SoDa)](https://odissei-soda.nl) team.
