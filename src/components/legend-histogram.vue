@@ -48,7 +48,6 @@ export default defineComponent({
 
       if (values.length === 0) return
 
-      // Determine minValue and maxValue based on legendMinMax prop or data
       const minValue = props.legendMinMax !== undefined ? props.legendMinMax[0] : d3.min(values)
       const maxValue = props.legendMinMax !== undefined ? props.legendMinMax[1] : d3.max(values)
 
@@ -66,8 +65,8 @@ export default defineComponent({
       svg = d3.select(container.value)
         .append('svg')
         .attr('width', '100%')
-        .attr('height', '220px')
-        .attr('viewBox', '0 0 180 220')
+        .attr('height', '150px')
+        .attr('viewBox', '0 0 300 150')
         .attr('preserveAspectRatio', 'xMidYMid meet')
 
       createDataMap()
@@ -78,12 +77,12 @@ export default defineComponent({
       if (!svg || regionDataMap.value.size === 0) return
 
       svg.selectAll('*').remove()
-      addHistogramLegend()
+      addPlainLegend()
     }
 
-    const addHistogramLegend = () => {
-      const legendWidth = 180
-      const legendHeight = 220
+    const addPlainLegend = () => {
+      const legendWidth = 300
+      const legendHeight = 150
       const legendMargin = { top: 20, right: 10, bottom: 30, left: 10 }
       const position = { x: 0, y: 0 }
 
@@ -91,71 +90,28 @@ export default defineComponent({
         .attr('class', 'legend-group')
         .attr('transform', `translate(${position.x}, ${position.y})`)
 
-      const allValues = Array.from(regionDataMap.value.values())
-        .map(d => d.value)
-        .filter((d): d is number => d !== undefined)
-
-      // Ensure colorScale domain is set before using it for histogram
       if (colorScale.value.domain()[0] === undefined || colorScale.value.domain()[1] === undefined) {
-          console.warn("Color scale domain is not set. Cannot render histogram legend.");
+          console.warn("Color scale domain is not set. Cannot render plain legend.");
           return;
       }
 
-      const histogram = d3.histogram()
-        .domain(colorScale.value.domain() as [number, number]) // Cast to ensure correct tuple type
-        .thresholds(props.bins || 8)
-
-      const bins = histogram(allValues)
-
       const xScale = d3.scaleLinear()
-        .domain(colorScale.value.domain() as [number, number]) // Cast to ensure correct tuple type
+        .domain(colorScale.value.domain() as [number, number])
         .range([legendMargin.left + 20, legendWidth - legendMargin.right - 10])
-
-      const histHeight = 120
-      const yScale = d3.scaleLinear()
-        .domain([0, d3.max(bins, d => d.length) || 1])
-        .nice()
-        .range([legendHeight - legendMargin.bottom - 60, legendHeight - legendMargin.bottom - histHeight])
 
       legendGroup.append('text')
         .attr('class', 'legend-title')
         .attr('text-anchor', 'middle')
         .attr('x', legendWidth / 2)
-        .attr('y', legendMargin.top + 5)
+        .attr('y', legendMargin.top + 15)
         .attr('font-size', '14px')
         .attr('font-weight', 'bold')
         .attr('fill', '#333')
-        .text(props.title || 'Value Distribution')
+        .text(props.title || 'Value Legend')
 
-      legendGroup.selectAll('.histogram-bar')
-        .data(bins)
-        .join('rect')
-        .attr('class', 'histogram-bar')
-        .attr('x', d => xScale(d.x0 || 0))
-        .attr('y', d => yScale(d.length))
-        .attr('width', d => Math.max(0, xScale(d.x1 || 0) - xScale(d.x0 || 0) - 1))
-        .attr('height', d => legendHeight - legendMargin.bottom - 60 - yScale(d.length))
-        .attr('fill', d => colorScale.value((d.x0 || 0 + (d.x1 || 0)) / 2))
-        .attr('opacity', 0.9)
-        .attr('rx', 2)
-        .attr('ry', 2)
-
-      const xAxis = d3.axisBottom(xScale)
-        .tickSize(3)
-        .tickFormat(d => formatTickValue(d as number))
-        .ticks(4)
-
-      legendGroup.append('g')
-        .attr('class', 'x-axis')
-        .attr('transform', `translate(0, ${legendHeight - legendMargin.bottom - 60})`)
-        .call(xAxis)
-        .call(g => g.select('.domain').remove())
-        .call(g => g.selectAll('.tick line').attr('stroke', '#888').attr('stroke-opacity', 0.5))
-        .call(g => g.selectAll('.tick text').attr('fill', '#555').attr('font-size', '10px'))
-
-      const gradientHeight = 15
+      const gradientHeight = 20
       const gradientWidth = legendWidth - legendMargin.left - legendMargin.right - 30
-      const gradientY = legendHeight - legendMargin.bottom - 35
+      const gradientY = legendMargin.top + 50
 
       const gradientId = 'color-gradient-' + Math.random().toString(36).substr(2, 9)
       const defs = svg.append('defs')
@@ -186,48 +142,73 @@ export default defineComponent({
 
       const [minValue, maxValue] = colorScale.value.domain() as [number, number];
 
-      legendGroup.append('text')
-        .attr('x', legendMargin.left + 20)
-        .attr('y', gradientY + gradientHeight + 15)
-        .attr('text-anchor', 'start')
-        .attr('font-size', '10px')
-        .attr('fill', '#555')
-        .text(formatLabelValue(minValue))
+      const numTicks = 6;
+      const whitespace = 8;
 
-      legendGroup.append('text')
-        .attr('x', legendMargin.left + 20 + gradientWidth)
-        .attr('y', gradientY + gradientHeight + 15)
-        .attr('text-anchor', 'end')
-        .attr('font-size', '10px')
-        .attr('fill', '#555')
-        .text(formatLabelValue(maxValue))
+      for (let i = 0; i < numTicks; i++) {
+        const tickValue = minValue + (maxValue - minValue) * (i / (numTicks - 1));
+        const tickX = xScale(tickValue);
+
+        legendGroup.append('text')
+          .attr('x', tickX)
+          .attr('y', gradientY + gradientHeight + whitespace + 12)
+          .attr('text-anchor', 'middle')
+          .attr('font-size', '10px')
+          .attr('fill', '#555')
+          .text(formatTickValue(tickValue));
+
+        legendGroup.append('line')
+          .attr('x1', tickX)
+          .attr('y1', gradientY + gradientHeight + whitespace)
+          .attr('x2', tickX)
+          .attr('y2', gradientY + gradientHeight + whitespace + 5)
+          .attr('stroke', '#888')
+          .attr('stroke-opacity', 0.5);
+      }
     }
 
-    const formatLabelValue = (value: number): string => {
-      if (value >= 1000000) {
-        return (value / 1000000).toFixed(1) + 'M'
-      } else if (value >= 1000) {
-        return (value / 1000).toFixed(1) + 'k'
-      } else {
-        return value.toString()
+    const formatNumber = (value: number): string => {
+      if (value === 0) {
+        return "0";
       }
+
+      const absValue = Math.abs(value);
+
+      if (absValue < 1) {
+        if (absValue < 0.0001) {
+          return d3.format(".5f")(value);
+        } else if (absValue < 0.001) {
+          return d3.format(".4f")(value);
+        } else if (absValue < 0.01) {
+          return d3.format(".3f")(value);
+        } else if (absValue < 0.1) {
+          return d3.format(".2f")(value);
+        } else {
+          return d3.format(".1f")(value);
+        }
+      } else if (absValue < 1000) {
+        if (value % 1 === 0) {
+          return d3.format(".0f")(value);
+        } else {
+          return d3.format(".1f")(value);
+        }
+      } else {
+        return d3.format(",.0f")(value);
+      }
+    };
+
+    const formatLabelValue = (value: number): string => {
+      return formatNumber(value);
     }
 
     const formatTickValue = (value: number): string => {
-      if (value >= 1000000) {
-        return (value / 1000000).toFixed(1) + 'M'
-      } else if (value >= 1000) {
-        return (value / 1000).toFixed(1) + 'k'
-      } else {
-        return value.toString()
-      }
+      return formatNumber(value);
     }
 
     onMounted(() => {
       initializeChart()
     })
 
-    // Watch for changes in regionData and legendMinMax
     watch(() => [props.regionData, props.legendMinMax], () => {
       createDataMap()
       updateChart()
