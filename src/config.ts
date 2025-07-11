@@ -2,9 +2,9 @@ const CATEGORY_COLUMNS = ["year", "month", "disease"]
 const VALUE_COLUMN = "mention_rate"
 const ID_COLUMN_GEOJSON = "cbscode"
 const ID_COLUMN_DATA_FILE = "cbscode"
-const DATA_FILE_NAME = "mentions_monthly.parquet"
+const DATA_FILE_NAME = "disease_database_v1.2.parquet"
 const GEOJSON_FILE_NAME = "nl1869.geojson"
-const LEGEND_MIN_MAX = [0, 1]
+const LEGEND_MIN_MAX = [0, 0.4]
 const LEGEND_TITLE = "Mention Rate"
 
 //const CATEGORY_COLUMNS = ["A", "B"]
