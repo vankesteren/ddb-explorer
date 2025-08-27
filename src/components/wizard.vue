@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-md mx-auto px-4 py-6">
+  <div class="max-w-sm md:mx-auto p-2 m-2">
     <div class="mb-6">
       <h2 class="text-xl font-bold text-gray-800">{{ steps[currentStep].title }}</h2>
       <div class="flex items-center mt-4">

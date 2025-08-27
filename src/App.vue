@@ -16,9 +16,7 @@
             </svg>
           </button>
         </div>
-        <div class="p-4">
-          <DataImportWizard @import-done="handleImport" />
-        </div>
+        <DataImportWizard @import-done="handleImport" />
       </div>
     </div>
 
