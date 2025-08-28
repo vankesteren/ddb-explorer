@@ -4,7 +4,8 @@
 <button
       v-show="isZoomed"
       @click="resetZoom"
-      class="absolute bottom-2 right-2 bg-white border border-gray-300 rounded-full p-2 shadow-lg hover:bg-gray-50 transition-colors z-10"
+      class="absolute bottom-2 right-2 bg-white border border-gray-300 rounded-full p-2 shadow-lg
+      hover:bg-gray-50 transition-colors z--10"
       title="Reset zoom"
     >
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
