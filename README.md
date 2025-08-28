@@ -2,28 +2,25 @@
 
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 
+Explore the app directly in your browser:  
+👉 [Live demo on GitHub Pages](https://sodascience.github.io/map-explorer/)
+
 ## Overview
 
-This repository contains a Vue.js web application that renders GeoJSON maps with dynamic region coloring. The application imports geographic boundary data in GeoJSON format and applies colors to regions based on external datasets (see `/public`). It can use any GeoJSON as the basis for the map and it can use a dataset to determine the coloring of the region.
+This repository contains a Vue.js web application that renders GeoJSON maps with dynamic region coloring. 
+
+The application imports geographic boundary data in GeoJSON format and applies colors to regions based on external datasets (see `/public`). It can use any GeoJSON as the basis for the map and it can use a dataset to determine the coloring of the region.
 
 Everything runs locally in the browser with [duckdb-wasm](https://github.com/duckdb/duckdb-wasm) as the underlying SQL online analytical processing (OLAP) database.
 
-## Features
+### Features
 
 - Import custom GeoJSON files for map boundaries
 - Upload datasets to determine region coloring
 - Browser-based processing with no server required
 - Real-time filtering and mapping of very large datasets
 
-## Quick Start
-
-### Online Demo
-
-Visit the GitHub Pages website of this project [here](https://sodascience.github.io/map-explorer/) and check out the example.
-
-You can import your own GeoJSON and data files to determine the coloring of the regions, using the "Import Data". In the datafile make sure that given an applied filtering each row maps a region to value.
-
-### Local Development
+## Development
 
 **Prerequisites**
 
@@ -55,7 +52,13 @@ npm install
 npm run dev
 ```
 
-## Embedding 
+## Use this application for yourself
+
+### Forking
+
+You can fork this repository and set your own map as the default map. You can share your own map through Github pages with your own audience!
+
+### Embedding 
 
 If you want to embed this application into your own website you can do so by including it into an iframe, like so:
 
