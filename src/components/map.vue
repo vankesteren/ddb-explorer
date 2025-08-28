@@ -1,9 +1,22 @@
 <template>
-  <svg ref="svgRef"></svg>
+  <div class="relative w-full h-full border border-gray-300 rounded p-2">
+    <svg class="w-full h-full" ref="svgRef"></svg>
+<button
+      v-show="isZoomed"
+      @click="resetZoom"
+      class="absolute bottom-2 right-2 bg-white border border-gray-300 rounded-full p-2 shadow-lg hover:bg-gray-50 transition-colors z-10"
+      title="Reset zoom"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+        <path d="M3 3v5h5"/>
+      </svg>
+    </button>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watchEffect } from 'vue'
+import { ref, onMounted, watchEffect, onUnmounted } from 'vue'
 import * as d3 from 'd3'
 import { createPopper } from '@popperjs/core'
 import type { RegionData } from "../parse_data.ts"
@@ -24,6 +37,12 @@ const props = withDefaults(defineProps<Props>(), {
 const svgRef = ref<SVGSVGElement | null>(null)
 const tooltipRef = ref<d3.Selection<HTMLDivElement, unknown, HTMLElement, any> | null>(null)
 const popperInstance = ref(null)
+const isZoomed = ref(false)
+let zoomBehavior = null
+let svg = null
+let g = null
+let currentTransform = d3.zoomIdentity
+
 const virtualElement = ref({
   getBoundingClientRect: () => ({
     width: 0,
@@ -37,6 +56,15 @@ const virtualElement = ref({
   }),
 })
 
+const resetZoom = () => {
+  if (svg && zoomBehavior) {
+    currentTransform = d3.zoomIdentity // Reset stored transform
+    svg.transition()
+      .duration(750)
+      .call(zoomBehavior.transform, d3.zoomIdentity)
+  }
+}
+
 const renderMap = () => {
   const svgElement = svgRef.value
   const geojsonData = props.geojson
@@ -48,17 +76,36 @@ const renderMap = () => {
     return
   }
 
-  const svg = d3.select(svgElement)
+  svg = d3.select(svgElement)
   const width = svgElement.getBoundingClientRect().width
   const height = svgElement.getBoundingClientRect().height
 
   // Clear existing content
   svg.selectAll("*").remove()
-  const g = svg.append('g')
+  g = svg.append('g')
+
+  // Setup zoom behavior
+  zoomBehavior = d3.zoom()
+    .scaleExtent([0.5, 8])
+    .on('zoom', (event) => {
+      const { transform } = event
+      currentTransform = transform // Store current transform
+      g.attr('transform', transform)
+
+      // Update zoom state
+      isZoomed.value = transform.k !== 1 || transform.x !== 0 || transform.y !== 0
+    })
+
+  svg.call(zoomBehavior)
+
+  // Restore previous zoom state
+  if (currentTransform && (currentTransform.k !== 1 || currentTransform.x !== 0 || currentTransform.y !== 0)) {
+    svg.call(zoomBehavior.transform, currentTransform)
+  }
 
   if (!tooltipRef.value) {
     tooltipRef.value = d3.select("body").append("div")
-      .attr("class", "absolute bg-white border border-gray-200 rounded-md p-2 pointer-events-none text-sm shadow-md")
+      .attr("class", "absolute bg-white border border-gray-200 rounded-md p-2 pointer-events-none text-sm shadow-md z-50")
       .style("visibility", "hidden")
   }
   const tooltip = tooltipRef.value
@@ -109,16 +156,19 @@ const renderMap = () => {
           <div class="text-gray-600 mt-1">Value: ${regionDataMap.get(d.properties[regionId])?.value}</div>
         `)
 
+      // Get the mouse position relative to the page, accounting for zoom
+      const [mouseX, mouseY] = d3.pointer(event, document.body)
+
       // Update virtual element position
       virtualElement.value.getBoundingClientRect = () => ({
         width: 0,
         height: 0,
-        top: event.clientY,
-        right: event.clientX,
-        bottom: event.clientY,
-        left: event.clientX,
-        x: event.clientX,
-        y: event.clientY,
+        top: mouseY,
+        right: mouseX,
+        bottom: mouseY,
+        left: mouseX,
+        x: mouseX,
+        y: mouseY,
       })
 
       if (popperInstance.value) {
@@ -167,15 +217,18 @@ const renderMap = () => {
       tooltip.style("visibility", "hidden")
     })
     .on('mousemove', function(event) {
+      // Get the mouse position relative to the page, accounting for zoom
+      const [mouseX, mouseY] = d3.pointer(event, document.body)
+
       virtualElement.value.getBoundingClientRect = () => ({
         width: 0,
         height: 0,
-        top: event.clientY,
-        right: event.clientX,
-        bottom: event.clientY,
-        left: event.clientX,
-        x: event.clientX,
-        y: event.clientY,
+        top: mouseY,
+        right: mouseX,
+        bottom: mouseY,
+        left: mouseX,
+        x: mouseX,
+        y: mouseY,
       })
 
       // Update Popper position
@@ -195,18 +248,23 @@ watchEffect(() => {
   }
 })
 
+const handleResize = () => {
+  renderMap()
+}
+
 onMounted(() => {
-  window.addEventListener('resize', renderMap)
-  return () => {
-    window.removeEventListener('resize', renderMap)
-    if (tooltipRef.value) {
-      tooltipRef.value.remove()
-      tooltipRef.value = null
-    }
-    if (popperInstance.value) {
-      popperInstance.value.destroy()
-      popperInstance.value = null
-    }
+  window.addEventListener('resize', handleResize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+  if (tooltipRef.value) {
+    tooltipRef.value.remove()
+    tooltipRef.value = null
+  }
+  if (popperInstance.value) {
+    popperInstance.value.destroy()
+    popperInstance.value = null
   }
 })
 </script>
