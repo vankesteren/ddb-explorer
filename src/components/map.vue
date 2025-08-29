@@ -240,7 +240,7 @@ const renderMap = () => {
 }
 
 onMounted(() => {
-  renderMap()
+  resizeObserver.observe(svgRef.value);
 })
 
 watchEffect(() => {
@@ -249,16 +249,15 @@ watchEffect(() => {
   }
 })
 
-const handleResize = () => {
-  renderMap()
-}
+const resizeObserver = new ResizeObserver(entries => {
+  for (let entry of entries) {
+    renderMap()
+  }
+});
 
-onMounted(() => {
-  window.addEventListener('resize', handleResize)
-})
+
 
 onUnmounted(() => {
-  window.removeEventListener('resize', handleResize)
   if (tooltipRef.value) {
     tooltipRef.value.remove()
     tooltipRef.value = null
