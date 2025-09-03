@@ -1,10 +1,14 @@
+import type {
+  AppConfig,
+  MapColorConfig
+} from "./types.ts"
+
 const CATEGORY_COLUMNS = ["year", "month", "disease"]
 const VALUE_COLUMN = "mention_rate"
 const ID_COLUMN_GEOJSON = "cbscode"
 const ID_COLUMN_DATA_FILE = "cbscode"
 const DATA_FILE_NAME = "disease_database_v1.2.parquet"
 const GEOJSON_FILE_NAME = "nl1869.geojson"
-const LEGEND_MIN_MAX = [0, 0.4]
 const LEGEND_TITLE = "Mention Rate"
 
 //const CATEGORY_COLUMNS = ["A", "B"]
@@ -16,15 +20,10 @@ const LEGEND_TITLE = "Mention Rate"
 //const LEGEND_MIN_MAX = [0, 100]
 //const LEGEND_TITLE = "Test"
 
-export interface AppConfig {
-    categoryColumns: string[]
-    valueColumn: string
-    idColumnGeojson: string
-    idColumnDataFile: string
-    dataFileName: string
-    geojsonFileName: string
-    legendMinMax: [number, number]
-    legendTitle: string
+const MAP_COLOR_CONFIG: MapColorConfig = {
+  minValue: 0,
+  maxValue: 0.4,
+  colorScheme: "viridis"
 }
 
 export const appConfig: AppConfig = {
@@ -34,8 +33,8 @@ export const appConfig: AppConfig = {
     idColumnDataFile: ID_COLUMN_DATA_FILE,
     dataFileName: DATA_FILE_NAME,
     geojsonFileName: GEOJSON_FILE_NAME,
-    legendMinMax: LEGEND_MIN_MAX,
     legendTitle: LEGEND_TITLE,
+    mapColorConfig: MAP_COLOR_CONFIG,
 }
 
 export default appConfig

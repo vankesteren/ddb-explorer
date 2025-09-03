@@ -31,7 +31,7 @@
               :geojson="geojsonData"
               :regionData="regionData"
               :regionId="config.idColumnGeojson"
-              :colorScaleDomain="config.legendMinMax"
+              :mapColorConfig="config.mapColorConfig"
               class="w-full h-full"
             />
             <div v-else class="w-full h-full flex items-center justify-center">
@@ -44,7 +44,7 @@
             <LegendHistogram
               :regionData="regionData"
               :title="config.legendTitle"
-              :legendMinMax="config.legendMinMax"
+              :mapColorConfig="config.mapColorConfig"
             />
           </div>
         </div>
@@ -54,7 +54,9 @@
       <ControlPanel
         v-if="isAppReady"
         :availableFilterOptions="availableFilterOptions"
+        :config="config"
         @filter-changed="handleFilterChanged"
+        @color-scheme-changed="handleColorSchemeChanged"
         @toggle-data-import="toggleDataImportWizard"
       />
     </div>
@@ -99,6 +101,10 @@ function toggleDataImportWizard() {
 // Filter handlers
 function handleFilterChanged(categoryName: string, value: any) {
   selectedFilters.value[categoryName] = value
+}
+
+function handleColorSchemeChanged(colorScheme: string) {
+  config.value.mapColorConfig.colorScheme = colorScheme
 }
 
 function resetSelectedFilters() {

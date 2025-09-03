@@ -28,7 +28,9 @@
         <div class="p-6" :class="{ 'hidden': !isControlsPanelOpen }">
           <ControlsPanelContent
             :available-filter-options="availableFilterOptions"
+            :config="config"
             @filter-changed="handleSelectionChanged"
+            @color-scheme-changed="handleColorSchemeChanged"
             @toggle-data-import="emit('toggle-data-import')"
           />
         </div>
@@ -39,7 +41,9 @@
     <div class="hidden lg:block lg:h-full lg:overflow-y-auto lg:p-6">
       <ControlsPanelContent
         :available-filter-options="availableFilterOptions"
+        :config="config"
         @filter-changed="handleSelectionChanged"
+        @color-scheme-changed="handleColorSchemeChanged"
         @toggle-data-import="emit('toggle-data-import')"
       />
     </div>
@@ -56,24 +60,32 @@ const props = defineProps({
   availableFilterOptions: {
     type: Object,
     default: () => ({})
+  },
+   config: {
+    type: Object
   }
 })
 
 // Emits
 const emit = defineEmits([
   'filter-changed',
-  'toggle-data-import'
+  'toggle-data-import',
+  'color-scheme-changed',
 ])
 
 // Mobile panel state
 const isControlsPanelOpen = ref(false)
 
 // Event handlers
-const handleSelectionChanged = (categoryName, value) => {
+function handleSelectionChanged(categoryName, value) {
   emit('filter-changed', categoryName, value)
 }
 
-const toggleControlsPanel = () => {
-  isControlsPanelOpen.value = !isControlsPanelOpen.value
+function handleColorSchemeChanged(value) {
+  emit('color-scheme-changed', value)
+}
+
+function toggleControlsPanel() {
+  return isControlsPanelOpen.value = !isControlsPanelOpen.value
 }
 </script>
