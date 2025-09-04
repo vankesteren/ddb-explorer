@@ -41,6 +41,7 @@ export async function executeQuery(query: string): Promise<duckdb.DuckDBDataArra
     }
     const result = await conn.query(query)
 
+    console.log(`[Duck DB] query: ${query}, executed`)
     return JSON.parse(JSON.stringify(result.toArray(), (key, value) => {
         return typeof value === 'bigint' ? value.toString() : value;
     }))

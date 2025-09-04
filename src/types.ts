@@ -29,4 +29,8 @@ export interface AppConfig {
     geojsonFileName: string
     legendTitle: string
     mapColorConfig: MapColorConfig
+    initialFiltering?: { [key: string]: string }
 }
+
+
+

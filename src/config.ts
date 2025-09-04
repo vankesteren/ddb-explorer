@@ -4,6 +4,11 @@ import type {
 } from "./types.ts"
 
 const CATEGORY_COLUMNS = ["year", "month", "disease"]
+const INITIAL_FILTERING = {
+  "year": "1918",
+  "month": "10",
+  "disease": "influenza"
+}
 const VALUE_COLUMN = "mention_rate"
 const ID_COLUMN_GEOJSON = "cbscode"
 const ID_COLUMN_DATA_FILE = "cbscode"
@@ -36,6 +41,7 @@ export const appConfig: AppConfig = {
     geojsonFileName: GEOJSON_FILE_NAME,
     legendTitle: LEGEND_TITLE,
     mapColorConfig: MAP_COLOR_CONFIG,
+    initialFiltering: INITIAL_FILTERING,
 }
 
 export default appConfig

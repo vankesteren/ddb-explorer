@@ -20,27 +20,26 @@
       </div>
     </div>
 
-    <!-- Main content -->
-    <div class="w-full h-screen flex transition-all duration-300 " :class="{ 'filter grayscale opacity-50': isDataImportWizardOpen }">
+    <!-- Main content - only show when app is ready and regionData exists -->
+    <div
+      v-if="isAppReady && regionData"
+      class="w-full h-screen flex transition-all duration-300"
+      :class="{ 'filter grayscale opacity-50': isDataImportWizardOpen }"
+    >
       <!-- Map container -->
       <div class="flex-1 flex flex-col relative p-5">
         <div class="w-full h-full flex flex-col">
           <div class="flex-1">
             <Map
-              v-if="isAppReady"
               :geojson="geojsonData"
               :regionData="regionData"
               :regionId="config.idColumnGeojson"
               :mapColorConfig="config.mapColorConfig"
               class="w-full h-full"
             />
-            <div v-else class="w-full h-full flex items-center justify-center">
-              <Spinner />
-            </div>
           </div>
-
           <!-- Legend below the map -->
-          <div v-if="isAppReady && dataProcessor" class="w-full mt-4">
+          <div v-if="dataProcessor" class="w-full mt-4">
             <LegendHistogram
               :regionData="regionData"
               :title="config.legendTitle"
@@ -52,13 +51,17 @@
 
       <!-- Controls panel -->
       <ControlPanel
-        v-if="isAppReady"
         :availableFilterOptions="availableFilterOptions"
         :config="config"
         @filter-changed="handleFilterChanged"
         @color-scheme-changed="handleColorSchemeChanged"
         @toggle-data-import="toggleDataImportWizard"
       />
+    </div>
+
+    <!-- Loading state -->
+    <div v-else class="w-full h-full flex items-center justify-center">
+      <Spinner />
     </div>
   </div>
 </template>
@@ -125,7 +128,7 @@ async function setMapControls(dataProcessor) {
 
 // Import handlers
 async function handleImport(importedConfig, importedGeojson, importedProcessor) {
-  console.log("Starting import")
+  console.log("[App] Importing new data")
 
   isAppReady.value = false
   toggleDataImportWizard()
@@ -141,31 +144,42 @@ async function handleImport(importedConfig, importedGeojson, importedProcessor) 
 
 // App initialization
 async function initializeApp() {
+  console.log("[App] App Initializing")
+
+  // Load Geojson
   const geojsonFile = await fetchPublicFile(config.value.geojsonFileName)
   geojsonData.value = JSON.parse(await geojsonFile.text()) as GeoJSON
 
+  // Load data file and create Processor
   const dataFile = await fetchPublicFile(config.value.dataFileName)
   dataProcessor.value = await ProcessorFactory.create(dataFile)
-  await setMapControls(dataProcessor.value)
-}
 
-// Data loading based on filter selection
-watch(selectedFilters, async () => {
-  const allFiltersSelected = Object.keys(availableFilterOptions.value).every(categoryName =>
-    selectedFilters.value[categoryName] !== undefined &&
-    selectedFilters.value[categoryName] !== null &&
-    selectedFilters.value[categoryName] !== ""
+  // Determine the data filters for the map control from the data
+  await setMapControls(dataProcessor.value)
+
+  // Either use an initial filtering from the config or one set in the config file
+  const initialFilters = config.value.initialFiltering || selectedFilters.value
+  regionData.value = await dataProcessor.value.getRegionData(
+    initialFilters,
+    config.value.idColumnDataFile,
+    config.value.valueColumn
   )
 
-  if (allFiltersSelected && dataProcessor.value) {
-    console.log("Fetching new region data")
-    regionData.value = await dataProcessor.value.getRegionData(
-      selectedFilters.value,
-      config.value.idColumnDataFile,
-      config.value.valueColumn
-    )
-    isAppReady.value = true
+  isAppReady.value = true
+  console.log("[App] App initialized")
+}
+
+// Watch filter if filter changed query new data
+watch(selectedFilters, async () => {
+  if (isAppReady.value !== true) {
+    return
   }
+  console.log("[App] Filter changed querying new data")
+  regionData.value = await dataProcessor.value.getRegionData(
+    selectedFilters.value,
+    config.value.idColumnDataFile,
+    config.value.valueColumn
+  )
 }, { deep: true })
 
 onMounted(async () => {
