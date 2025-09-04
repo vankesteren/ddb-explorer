@@ -2,7 +2,7 @@
   <div class="relative w-full h-full border border-gray-300 rounded p-2">
     <svg class="w-full h-full" ref="svgRef"></svg>
     <button
-      v-show="isZoomed"
+      v-show="isZoomedRef"
       @click="resetZoom"
       class="absolute bottom-2 right-2 bg-white border border-gray-300 rounded-full p-2 shadow-lg
       hover:bg-gray-50 transition-colors z--10"
@@ -39,8 +39,8 @@ const props = withDefaults(defineProps<Props>(), {
 
 const svgRef = ref<SVGSVGElement | null>(null)
 const tooltipRef = ref<d3.Selection<HTMLDivElement, unknown, HTMLElement, any> | null>(null)
-const popperInstance = ref(null)
-const isZoomed = ref(false)
+const popperInstanceRef = ref(null)
+const isZoomedRef = ref(false)
 let zoomBehavior = null
 let svg = null
 let g = null
@@ -70,22 +70,21 @@ const resetZoom = () => {
 }
 
 const renderMap = () => {
-  const svgElement = svgRef.value
   const geojsonData = props.geojson
   const regionData = props.regionData
   const regionId = props.regionId
   const mapColorConfig = props.mapColorConfig
 
-  if (!svgElement || !geojsonData || !regionData) {
+  if (!svgRef.value || !geojsonData || !regionData) {
     return
   }
 
   // Create MapColor instance
   mapColor = new MapColor(mapColorConfig)
 
-  svg = d3.select(svgElement)
-  const width = svgElement.getBoundingClientRect().width
-  const height = svgElement.getBoundingClientRect().height
+  svg = d3.select(svgRef.value)
+  const width = svgRef.value.getBoundingClientRect().width
+  const height = svgRef.value.getBoundingClientRect().height
 
   // Clear existing content
   svg.selectAll("*").remove()
@@ -95,12 +94,13 @@ const renderMap = () => {
   zoomBehavior = d3.zoom()
     .scaleExtent([0.5, 8])
     .on('zoom', (event) => {
+      tooltipRef.value.style("visibility", "hidden")
       const { transform } = event
       currentTransform = transform // Store current transform
       g.attr('transform', transform)
 
       // Update zoom state
-      isZoomed.value = transform.k !== 1 || transform.x !== 0 || transform.y !== 0
+      isZoomedRef.value = transform.k !== 1 || transform.x !== 0 || transform.y !== 0
     })
 
   svg.call(zoomBehavior)
@@ -115,7 +115,6 @@ const renderMap = () => {
       .attr("class", "absolute bg-white border border-gray-200 rounded-md p-2 pointer-events-none text-sm shadow-md z-50")
       .style("visibility", "hidden")
   }
-  const tooltip = tooltipRef.value
   const projection = d3.geoMercator().fitSize([width, height], geojsonData)
   const pathGenerator = d3.geoPath().projection(projection)
 
@@ -162,7 +161,7 @@ const renderMap = () => {
       const formattedValue = typeof value === 'number' ? value.toLocaleString() : value
 
       // Set tooltip content
-      tooltip
+      tooltipRef.value
         .style("visibility", "visible")
         .html(`
           <div class="font-bold text-gray-800">Region: ${d.properties[regionId]}</div>
@@ -185,10 +184,10 @@ const renderMap = () => {
         y: mouseY,
       })
 
-      if (popperInstance.value) {
-        popperInstance.value.update()
-      } else if (tooltip.node()) {
-        popperInstance.value = createPopper(virtualElement.value, tooltip.node(), {
+      if (popperInstanceRef.value) {
+        popperInstanceRef.value.update()
+      } else if (tooltipRef.value.node()) {
+        popperInstanceRef.value = createPopper(virtualElement.value, tooltipRef.value.node(), {
           placement: 'top',
           modifiers: [
             {
@@ -228,7 +227,7 @@ const renderMap = () => {
         .attr('fill', (d) => {
           return getColor(d)
         })
-      tooltip.style("visibility", "hidden")
+      tooltipRef.value.style("visibility", "hidden")
     })
     .on('mousemove', function(event) {
       // Get the mouse position relative to the page, accounting for zoom
@@ -246,8 +245,8 @@ const renderMap = () => {
       })
 
       // Update Popper position
-      if (popperInstance.value) {
-        popperInstance.value.update()
+      if (popperInstanceRef.value) {
+        popperInstanceRef.value.update()
       }
     })
 }
@@ -273,9 +272,9 @@ onUnmounted(() => {
     tooltipRef.value.remove()
     tooltipRef.value = null
   }
-  if (popperInstance.value) {
-    popperInstance.value.destroy()
-    popperInstance.value = null
+  if (popperInstanceRef.value) {
+    popperInstanceRef.value.destroy()
+    popperInstanceRef.value = null
   }
   resizeObserver.disconnect()
 })
