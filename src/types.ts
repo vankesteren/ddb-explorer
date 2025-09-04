@@ -17,6 +17,7 @@ export interface MapColorConfig {
   maxValue: number
   numBins?: number
   colorScheme?: ColorScheme
+  dynamic?: boolean
 }
 
 export interface AppConfig {

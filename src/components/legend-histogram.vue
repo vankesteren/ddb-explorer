@@ -1,11 +1,14 @@
 <template>
-  <div class="histogram-legend-container" ref="container"></div>
+  <div class="histogram-legend-container" ref="containerRef"></div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import * as d3 from 'd3'
-import { MapColor } from '../map_color.ts'
+import {
+  MapColor,
+  createMapColor
+} from '../map_color.ts'
 import type { RegionData } from '../parse_data.ts'
 import type { MapColorConfig } from '../types.ts'
 
@@ -19,13 +22,9 @@ const props = withDefaults(defineProps<Props>(), {
   title: 'Value Legend',
 })
 
-const container = ref<HTMLElement | null>(null)
+const containerRef = ref<HTMLElement | null>(null)
 let svg: any = null
 let mapColor: MapColor | null = null
-
-const createMapColor = () => {
-  mapColor = new MapColor(props.mapColorConfig)
-}
 
 const renderLegend = () => {
   if (!svg || !mapColor) return
@@ -89,20 +88,16 @@ const renderLegend = () => {
   })
 }
 
-const getBinColor = (value: number): string => {
-  return mapColor ? mapColor.getBinColor(value) : '#ccc'
-}
-
 const initialize = () => {
-  if (!container.value || !props.regionData.length) return
+  if (!containerRef.value || !props.regionData.length) return
 
-  svg = d3.select(container.value)
+  svg = d3.select(containerRef.value)
     .append('svg')
     .attr('width', '100%')
     .attr('height', '150px')
     .attr('viewBox', '0 0 300 150')
 
-  createMapColor()
+  mapColor = createMapColor(props.mapColorConfig, props.regionData)
   renderLegend()
 }
 
@@ -111,7 +106,7 @@ onMounted(initialize)
 watch(
   () => [props.regionData, props.mapColorConfig],
   () => {
-    createMapColor()
+    mapColor = createMapColor(props.mapColorConfig, props.regionData)
     renderLegend()
   },
   { deep: true }

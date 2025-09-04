@@ -20,7 +20,10 @@
 import { ref, onMounted, watchEffect, onUnmounted } from 'vue'
 import * as d3 from 'd3'
 import { createPopper } from '@popperjs/core'
-import { MapColor } from "../map_color"
+import {
+  MapColor,
+  createMapColor,
+} from "../map_color"
 import type { GeoJSON } from "geojson"
 import type { MapColorConfig } from "../types"
 import type { RegionData } from "../processors/types"
@@ -80,7 +83,7 @@ const renderMap = () => {
   }
 
   // Create MapColor instance
-  mapColor = new MapColor(mapColorConfig)
+  mapColor = createMapColor(mapColorConfig, regionData)
 
   svg = d3.select(svgRef.value)
   const width = svgRef.value.getBoundingClientRect().width

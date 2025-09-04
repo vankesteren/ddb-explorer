@@ -1,6 +1,10 @@
-// MapColor.ts
 import * as d3 from 'd3'
-import type { MapColorConfig, ColorScheme } from './types'
+import type {
+  MapColorConfig,
+  ColorScheme
+} from './types'
+import type { RegionData } from "./processors/types.ts"
+
 
 export class MapColor {
   private readonly thresholds: number[]
@@ -95,6 +99,28 @@ export class MapColor {
   }
 }
 
-// Re-export for convenience if you prefer importing from this module
-export type { ColorScheme } from './types'
+/**
+ * Creates a MapColor instance with dynamic min/max calculation
+ * @param config - MapColorConfig with dynamic flag
+ * @param regionData - Array of region data to calculate min/max from
+ * @returns MapColor instance
+ */
+export function createMapColor(
+  config: MapColorConfig,
+  regionData: RegionData[]
+): MapColor {
 
+  if (config.dynamic && regionData.length > 0) {
+    // Convert string values to numbers and filter out invalid values
+    const numericValues = regionData
+      .map(region => parseFloat(region.value))
+      .filter(value => Number.isFinite(value))
+
+    if (numericValues.length > 0) {
+      config.minValue = Math.min(...numericValues)
+      config.maxValue = Math.max(...numericValues)
+    }
+  }
+
+  return new MapColor(config)
+}

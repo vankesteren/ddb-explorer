@@ -23,7 +23,8 @@ const LEGEND_TITLE = "Mention Rate"
 const MAP_COLOR_CONFIG: MapColorConfig = {
   minValue: 0,
   maxValue: 0.4,
-  colorScheme: "viridis"
+  colorScheme: "viridis",
+  dynamic: false,
 }
 
 export const appConfig: AppConfig = {
