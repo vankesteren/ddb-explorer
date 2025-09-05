@@ -46,7 +46,6 @@
               :mapColorConfig="config.mapColorConfig"
             />
           </div>
-
         </div>
       </div>
 
@@ -56,6 +55,7 @@
         :config="config"
         @filter-changed="handleFilterChanged"
         @color-scheme-changed="handleColorSchemeChanged"
+        @dynamic-legend-changed="handleDynamicLegendChanged"
         @toggle-data-import="toggleDataImportWizard"
       />
     </div>
@@ -97,19 +97,25 @@ const selectedFilters = ref<{ [key: string]: string }>({})
 const isAppReady = ref(false)
 const isDataImportWizardOpen = ref(false)
 
-// UI handlers
+// Map control handlers
 function toggleDataImportWizard() {
   isDataImportWizardOpen.value = !isDataImportWizardOpen.value
 }
 
-// Filter handlers
 function handleFilterChanged(categoryName: string, value: any) {
   selectedFilters.value[categoryName] = value
 }
 
+function handleDynamicLegendChanged(value: boolean) {
+  console.log(`[App] dynamic legend set to: ${value}`)
+  config.value.mapColorConfig.dynamic = value
+}
+
 function handleColorSchemeChanged(colorScheme: string) {
+  console.log(`[App] color scheme set to: ${colorScheme}`)
   config.value.mapColorConfig.colorScheme = colorScheme
 }
+
 
 function resetSelectedFilters() {
   selectedFilters.value = {}

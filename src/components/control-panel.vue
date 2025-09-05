@@ -32,6 +32,7 @@
             @filter-changed="handleSelectionChanged"
             @color-scheme-changed="handleColorSchemeChanged"
             @toggle-data-import="emit('toggle-data-import')"
+            @dynamic-legend-changed="handleDynamicLegendChanged"
           />
         </div>
       </div>
@@ -45,6 +46,7 @@
         @filter-changed="handleSelectionChanged"
         @color-scheme-changed="handleColorSchemeChanged"
         @toggle-data-import="emit('toggle-data-import')"
+        @dynamic-legend-changed="handleDynamicLegendChanged"
       />
     </div>
   </div>
@@ -52,7 +54,6 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import Selection from './selection.vue'
 import ControlsPanelContent from './control-panel-contents.vue'
 
 // Props
@@ -71,6 +72,7 @@ const emit = defineEmits([
   'filter-changed',
   'toggle-data-import',
   'color-scheme-changed',
+  'dynamic-legend-changed'
 ])
 
 // Mobile panel state
@@ -83,6 +85,10 @@ function handleSelectionChanged(categoryName, value) {
 
 function handleColorSchemeChanged(value) {
   emit('color-scheme-changed', value)
+}
+
+function handleDynamicLegendChanged(value) {
+  emit('dynamic-legend-changed', value)
 }
 
 function toggleControlsPanel() {

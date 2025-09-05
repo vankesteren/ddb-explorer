@@ -41,6 +41,15 @@
             :defaultValue="config.mapColorConfig.colorScheme"
             @selection-changed="(value) => handleColorSchemeChanged(value)"
           />
+          <!-- Checkbox Component -->
+          <Checkbox
+            class="mt-3"
+            label="Dynamic Legend"
+            :defaultValue="config.mapColorConfig.dynamic"
+            @checkbox-changed="handleCheckboxChanged"
+          >
+            Calculate the min and max from the data
+          </Checkbox>
         </div>
       </div>
     </section>
@@ -87,6 +96,7 @@ text-white font-medium py-2.5 px-4 hover:bg-emerald-700 transition-colors"-->
 <script setup>
 import { computed } from 'vue'
 import Selection from './selection.vue'
+import Checkbox from './checkbox.vue'
 import { colorSchemes } from '../types.ts'
 
 // Props
@@ -117,6 +127,7 @@ const emit = defineEmits([
   'filter-changed',
   'toggle-data-import',
   'color-scheme-changed',
+  'dynamic-legend-changed',
 ])
 
 // Computed properties
@@ -133,4 +144,7 @@ function handleColorSchemeChanged(value) {
   emit('color-scheme-changed', value)
 }
 
+function handleCheckboxChanged(value) {
+  emit('dynamic-legend-changed', value)
+}
 </script>
