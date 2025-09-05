@@ -39,13 +39,14 @@
             />
           </div>
           <!-- Legend below the map -->
-          <div v-if="dataProcessor" class="w-full mt-4">
+          <div class="w-full mt-4">
             <LegendHistogram
               :regionData="regionData"
               :title="config.legendTitle"
               :mapColorConfig="config.mapColorConfig"
             />
           </div>
+
         </div>
       </div>
 
