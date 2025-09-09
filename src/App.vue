@@ -60,9 +60,9 @@
       />
     </div>
 
-    <!-- Loading state -->
-    <div v-else class="w-full h-full flex items-center justify-center">
-      <Spinner />
+    <!-- Loading App -->
+    <div v-else class="w-full h-full flex items-center justify-center" >
+      <ChartSkeleton />
     </div>
   </div>
 </template>
@@ -73,7 +73,7 @@ import { ref, onMounted, watch } from "vue"
 // components
 import Map from "./components/map.vue"
 import LegendHistogram from "./components/legend-histogram.vue"
-import Spinner from "./components/spinner.vue"
+import ChartSkeleton from "./components/chart-skeleton.vue"
 import DataImportWizard from "./components/wizard.vue"
 import ControlPanel from "./components/control-panel.vue"
 
