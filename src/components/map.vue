@@ -17,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watchEffect, onUnmounted } from 'vue'
+import { ref, onMounted, watch, onUnmounted } from 'vue'
 import * as d3 from 'd3'
 import { createPopper } from '@popperjs/core'
 import {
@@ -25,19 +25,21 @@ import {
   createMapColor,
 } from "../map_color"
 import type { GeoJSON } from "geojson"
-import type { MapColorConfig } from "../types"
+import type {
+  MapColorConfig,
+  AppConfig
+} from "../types"
 import type { RegionData } from "../processors/types"
 
 interface Props {
-  geojson: GeoJSON | null
-  regionData: RegionData[] | null
-  regionId: string
-  mapColorConfig: MapColorConfig
+  geojson: GeoJSON
+  regionData: RegionData[] | undefined
+  config: AppConfig
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  geojson: null,
-  regionData: () => null,
+  geojson: undefined,
+  regionData: () => undefined,
 })
 
 const svgRef = ref<SVGSVGElement | null>(null)
@@ -48,7 +50,6 @@ let zoomBehavior = null
 let svg = null
 let g = null
 let currentTransform = d3.zoomIdentity
-let mapColor: MapColor | null = null
 
 const virtualElement = ref({
   getBoundingClientRect: () => ({
@@ -63,7 +64,7 @@ const virtualElement = ref({
   }),
 })
 
-const resetZoom = () => {
+function resetZoom() {
   if (svg && zoomBehavior) {
     currentTransform = d3.zoomIdentity // Reset stored transform
     svg.transition()
@@ -72,18 +73,28 @@ const resetZoom = () => {
   }
 }
 
-const renderMap = () => {
+function createRegionDataMap(regionData) {
+  const regionDataMap = new Map<string, any>()
+  if (regionData) {
+    regionData.forEach(region => {
+      regionDataMap.set(region.regionId, region)
+    })
+  }
+  return regionDataMap
+}
+
+
+function renderMap() {
   const geojsonData = props.geojson
   const regionData = props.regionData
-  const regionId = props.regionId
-  const mapColorConfig = props.mapColorConfig
+  const idColumnGeojson = props.config.idColumnGeojson
+  const config = props.config
 
-  if (!svgRef.value || !geojsonData || !regionData) {
+  if (!svgRef.value || !geojsonData ) {
     return
   }
 
-  // Create MapColor instance
-  mapColor = createMapColor(mapColorConfig, regionData)
+  const regionDataMap = createRegionDataMap(regionData)
 
   svg = d3.select(svgRef.value)
   const width = svgRef.value.getBoundingClientRect().width
@@ -121,17 +132,12 @@ const renderMap = () => {
   const projection = d3.geoMercator().fitSize([width, height], geojsonData)
   const pathGenerator = d3.geoPath().projection(projection)
 
-  const regionDataMap = new Map<string, any>()
-  regionData.forEach(region => {
-    regionDataMap.set(region.regionId, region)
-  })
+
+  const mapColor = createMapColor(config, regionData)
 
   function getColor(d) {
-    const regionInfo = regionDataMap.get(d.properties[regionId])
-    if (!regionInfo || !Number.isFinite(regionInfo.value)) {
-      return '#ccc' // Default color for missing data
-    }
-    return mapColor.getBinColor(regionInfo.value)
+    const region = regionDataMap.get(d.properties[idColumnGeojson])
+    return mapColor.getBinColor(region?.value)
   }
 
   const paths = g.selectAll<SVGPathElement, Feature>('path')
@@ -159,15 +165,15 @@ const renderMap = () => {
         })
 
       // Get region data for tooltip
-      const regionInfo = regionDataMap.get(d.properties[regionId])
-      const value = regionInfo?.value ?? 'No data'
+      const regionId = d.properties[idColumnGeojson]
+      const value = regionDataMap.get(regionId)?.value ?? "No data"
       const formattedValue = typeof value === 'number' ? value.toLocaleString() : value
 
       // Set tooltip content
       tooltipRef.value
         .style("visibility", "visible")
         .html(`
-          <div class="font-bold text-gray-800">Region: ${d.properties[regionId]}</div>
+          <div class="font-bold text-gray-800">Region: ${regionId}</div>
           <div class="text-gray-600 mt-1">${d.properties.name || 'Unknown'}</div>
           <div class="text-gray-600 mt-1">Value: ${formattedValue}</div>
         `)
@@ -264,11 +270,14 @@ onMounted(() => {
   resizeObserver.observe(svgRef.value);
 })
 
-watchEffect(() => {
-  if (props.geojson && props.regionData) {
+
+watch(
+  [() => props.config, () => props.regionData, () => props.geojson],
+  () => {
     renderMap()
-  }
-})
+  },
+  { deep: true }
+)
 
 onUnmounted(() => {
   if (tooltipRef.value) {

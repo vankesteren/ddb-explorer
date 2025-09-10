@@ -13,23 +13,23 @@ import type { RegionData } from '../parse_data.ts'
 import type { MapColorConfig } from '../types.ts'
 
 interface Props {
-  regionData: RegionData[]
-  mapColorConfig: MapColorConfig
-  title?: string
+  regionData: RegionData[] | undefined
+  config: AppConfig
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  title: 'Value Legend',
+  regionData: () => undefined,
 })
 
 const containerRef = ref<HTMLElement | null>(null)
 let svg: any = null
-let mapColor: MapColor | null = null
 
-const renderLegend = () => {
-  if (!svg || !mapColor) return
+function renderLegend() {
+  if (!svg) return
 
   svg.selectAll('*').remove()
+
+  const mapColor = createMapColor(props.config, props.regionData)
 
   const width = 300
   const height = 150
@@ -89,6 +89,24 @@ const renderLegend = () => {
 }
 
 const initialize = () => {
+  switch (props.config.kind) {
+
+    // dont render a legend with geojson-only
+    case "geojson-only":
+      return
+      break
+
+    case "geojson-datafile":
+      break
+
+    case "geojson-embedded":
+      break
+
+    default:
+      break
+
+  }
+
   if (!containerRef.value || !props.regionData.length) return
 
   svg = d3.select(containerRef.value)
@@ -97,18 +115,17 @@ const initialize = () => {
     .attr('height', '150px')
     .attr('viewBox', '0 0 300 150')
 
-  mapColor = createMapColor(props.mapColorConfig, props.regionData)
   renderLegend()
 }
 
 onMounted(initialize)
 
 watch(
-  () => [props.regionData, props.mapColorConfig],
+  [() => props.config, () => props.regionData, () => props.geojson],
   () => {
-    mapColor = createMapColor(props.mapColorConfig, props.regionData)
     renderLegend()
   },
   { deep: true }
 )
+
 </script>

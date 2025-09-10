@@ -22,7 +22,7 @@
 
     <!-- Main content - only show when app is ready and regionData exists -->
     <div
-      v-if="isAppReady && regionData"
+      v-if="isAppReady"
       class="w-full h-screen flex transition-all duration-300"
       :class="{ 'filter grayscale opacity-50': isDataImportWizardOpen }"
     >
@@ -33,8 +33,7 @@
             <Map
               :geojson="geojsonData"
               :regionData="regionData"
-              :regionId="config.idColumnGeojson"
-              :mapColorConfig="config.mapColorConfig"
+              :config="config"
               class="w-full h-full"
             />
           </div>
@@ -42,8 +41,7 @@
           <div class="w-full mt-4">
             <LegendHistogram
               :regionData="regionData"
-              :title="config.legendTitle"
-              :mapColorConfig="config.mapColorConfig"
+              :config="config"
             />
           </div>
         </div>
@@ -82,12 +80,16 @@ import type { GeoJSON } from "geojson"
 import type { RegionData } from "./processors/types"
 import { ProcessorFactory } from "./processors/processor_factory"
 import { appConfig } from "./config"
+import { validateAppConfig } from "./types.ts"
+
 
 // App state
-const dataProcessor = ref(null)
-const config = ref(appConfig)
-const geojsonData = ref<GeoJSON | null>(null)
-const regionData = ref<RegionData[] | null>(null)
+const dataProcessor = ref(undefined)
+const geojsonData = ref<GeoJSON | null>(undefined)
+const regionData = ref<RegionData[] | null>(undefined)
+
+let config = ref(undefined)
+config.value = validateAppConfig(appConfig)
 
 // Filter state
 const availableFilterOptions = ref<{ [key: string]: string[] }>({})
@@ -106,16 +108,21 @@ function handleFilterChanged(categoryName: string, value: any) {
   selectedFilters.value[categoryName] = value
 }
 
-function handleDynamicLegendChanged(value: boolean) {
-  console.log(`[App] dynamic legend set to: ${value}`)
-  config.value.mapColorConfig.dynamic = value
+function handleDynamicLegendChanged(bool: boolean) {
+  console.log(`[App] dynamic legend set to: ${bool}`)
+  config.value = {
+    ...config.value,
+    mapColorConfig: { ...config.value.mapColorConfig, dynamic: bool }
+  }
 }
 
-function handleColorSchemeChanged(colorScheme: string) {
-  console.log(`[App] color scheme set to: ${colorScheme}`)
-  config.value.mapColorConfig.colorScheme = colorScheme
+function handleColorSchemeChanged(s: string) {
+  console.log(`[App] color scheme set to: ${s}`)
+  config.value = {
+    ...config.value,
+    mapColorConfig: { ...config.value.mapColorConfig, colorScheme: s }
+  }
 }
-
 
 function resetSelectedFilters() {
   selectedFilters.value = {}
@@ -153,24 +160,39 @@ async function handleImport(importedConfig, importedGeojson, importedProcessor) 
 async function initializeApp() {
   console.log("[App] App Initializing")
 
-  // Load Geojson
-  const geojsonFile = await fetchPublicFile(config.value.geojsonFileName)
-  geojsonData.value = JSON.parse(await geojsonFile.text()) as GeoJSON
+    // Load Geojson
+    const geojsonFile = await fetchPublicFile(config.value.geojsonFileName)
+    geojsonData.value = JSON.parse(await geojsonFile.text()) as GeoJSON
 
-  // Load data file and create Processor
-  const dataFile = await fetchPublicFile(config.value.dataFileName)
-  dataProcessor.value = await ProcessorFactory.create(dataFile)
+    // config dependend initialization
+    switch (config.value.kind) {
+      case "geojson-only":
+        break
 
-  // Determine the data filters for the map control from the data
-  await setMapControls(dataProcessor.value)
+      case "geojson-datafile":
+        // Load data file and create Processor
+        const dataFile = await fetchPublicFile(config.value.dataFileName)
+        dataProcessor.value = await ProcessorFactory.create(dataFile)
 
-  // Either use an initial filtering from the config or one set in the config file
-  const initialFilters = config.value.initialFiltering || selectedFilters.value
-  regionData.value = await dataProcessor.value.getRegionData(
-    initialFilters,
-    config.value.idColumnDataFile,
-    config.value.valueColumn
-  )
+        // Determine the data filters for the map control from the data
+        await setMapControls(dataProcessor.value)
+
+        // Either use an initial filtering from the config or one set in the config file
+        const initialFilters = config.value.initialFiltering || selectedFilters.value
+        regionData.value = await dataProcessor.value.getRegionData(
+          initialFilters,
+          config.value.idColumnDataFile,
+          config.value.valueColumn
+        )
+        break
+
+      case "geojson-embedded":
+        break
+
+      default: {
+        throw new Error(`Unhandled AppConfig kind: ${JSON.stringify(config)}`)
+      }
+    }
 
   isAppReady.value = true
   console.log("[App] App initialized")
