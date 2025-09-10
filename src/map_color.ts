@@ -99,11 +99,6 @@ export function createMapColor(
         if (numericValues.length) {
           minValue = Math.min(...numericValues)
           maxValue = Math.max(...numericValues)
-          if (minValue === maxValue) {
-            const eps = Math.max(Math.abs(minValue) * 1e-12, Number.EPSILON)
-            minValue -= eps
-            maxValue += eps
-          }
         }
       }
 
