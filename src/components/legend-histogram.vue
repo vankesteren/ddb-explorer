@@ -51,7 +51,7 @@ function renderLegend() {
     .attr('text-anchor', 'middle')
     .attr('font-size', '14px')
     .attr('font-weight', 'bold')
-    .text(props.title)
+    .text(props.config.legendTitle)
 
   // Color bins
   colors.forEach((color, i) => {

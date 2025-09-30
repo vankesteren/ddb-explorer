@@ -36,12 +36,12 @@
         <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-600 mb-3">Map Options</h3>
         <div v-if="config.kind !== 'geojson-only'">
           <div>
-              <Selection
-                :label="'Color Scheme'"
-                :options="colorSchemes"
-                :defaultValue="config.mapColorConfig.colorScheme"
-                @selection-changed="handleColorSchemeChanged"
-              />
+            <Selection
+              :label="'Color Scheme'"
+              :options="colorSchemes"
+              :defaultValue="config.mapColorConfig.colorScheme"
+              @selection-changed="handleColorSchemeChanged"
+            />
             <!-- Checkbox Component -->
             <Checkbox
               class="mt-3"
@@ -55,11 +55,29 @@
             <Checkbox
               class="mt-3"
               label="Dynamic Legend"
-              :defaultValue="config.mapColorConfig.dynamic"
+              :defaultValue=config.mapColorConfig.dynamic
               @checkbox-changed="handleDynamicLegendChanged"
             >
               Calculate the min and max from the data
             </Checkbox>
+            <InputField
+              class="mt-3"
+              label="Legend Minimum"
+              type="number"
+              :defaultValue="config.mapColorConfig.minValue"
+              :disabled="config.mapColorConfig.dynamic"
+              placeholder="0.00"
+              @input-changed="handleLegendMinimumChanged"
+            />
+            <InputField
+              class="mt-3"
+              label="Legend Maximum"
+              type="number"
+              :defaultValue="config.mapColorConfig.maxValue"
+              :disabled="config.mapColorConfig.dynamic"
+              placeholder="1.00"
+              @input-changed="handleLegendMaximumChanged"
+            />
           </div>
         </div>
         <div v-else class="text-gray-500 text-sm italic">
@@ -111,6 +129,7 @@
 import { computed } from 'vue'
 import Selection from './selection.vue'
 import Checkbox from './checkbox.vue'
+import InputField from './input-field.vue'
 import { colorSchemes } from '../types.ts'
 
 // Props
@@ -170,5 +189,13 @@ function handleColorSchemeInvertedChanged(value) {
 
 function handleDynamicLegendChanged(value) {
   handleMapConfigChange('dynamic', value)
+}
+
+function handleLegendMinimumChanged(value) {
+  handleMapConfigChange('minValue', value)
+}
+
+function handleLegendMaximumChanged(value) {
+  handleMapConfigChange('maxValue', value)
 }
 </script>

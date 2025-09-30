@@ -59,7 +59,7 @@ export const AppConfigSchema = z.discriminatedUnion("kind", [
     idColumnGeojson: z.string(),
     categoryColumns: z.array(z.string()),
     valueColumn: z.string(),
-    legendTitle: z.string(),
+    legendTitle: z.string().optional(),
     mapColorConfig: MapColorConfigSchema,
     initialFiltering: z.record(z.string(), z.string()).optional(),
   }),
