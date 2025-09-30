@@ -40,26 +40,34 @@
                 :label="'Color Scheme'"
                 :options="colorSchemes"
                 :defaultValue="config.mapColorConfig.colorScheme"
-                @selection-changed="(value) => handleColorSchemeChanged(value)"
+                @selection-changed="handleColorSchemeChanged"
               />
+            <!-- Checkbox Component -->
+            <Checkbox
+              class="mt-3"
+              label="Invert Color Scheme"
+              :defaultValue="config.mapColorConfig.colorSchemeInverted"
+              @checkbox-changed="handleColorSchemeInvertedChanged"
+            >
+              Invert color scheme
+            </Checkbox>
             <!-- Checkbox Component -->
             <Checkbox
               class="mt-3"
               label="Dynamic Legend"
               :defaultValue="config.mapColorConfig.dynamic"
-              @checkbox-changed="handleCheckboxChanged"
+              @checkbox-changed="handleDynamicLegendChanged"
             >
               Calculate the min and max from the data
             </Checkbox>
           </div>
         </div>
-          <div v-else class="text-gray-500 text-sm italic">
-            No map options available.
-          </div>
+        <div v-else class="text-gray-500 text-sm italic">
+          No map options available.
+        </div>
       </div>
     </section>
 
-    <!--
     <!-- CARD: DATA IMPORT -->
     <div v-if="false">
     <section class="rounded-lg border border-gray-200 shadow-sm bg-white">
@@ -132,8 +140,7 @@ function getDefaulFilterValue(categoryName, options) {
 const emit = defineEmits([
   'filter-changed',
   'toggle-data-import',
-  'color-scheme-changed',
-  'dynamic-legend-changed',
+  'map-config-changed',
 ])
 
 // Computed properties
@@ -146,11 +153,22 @@ function handleFilterChanged(categoryName, value) {
   emit('filter-changed', categoryName, value)
 }
 
-function handleColorSchemeChanged(value) {
-  emit('color-scheme-changed', value)
+function handleMapConfigChange(field, value) {
+  emit('map-config-changed', {
+    ...props.config.mapColorConfig,
+    [field]: value
+  })
 }
 
-function handleCheckboxChanged(value) {
-  emit('dynamic-legend-changed', value)
+function handleColorSchemeChanged(value) {
+  handleMapConfigChange('colorScheme', value)
+}
+
+function handleColorSchemeInvertedChanged(value) {
+  handleMapConfigChange('colorSchemeInverted', value)
+}
+
+function handleDynamicLegendChanged(value) {
+  handleMapConfigChange('dynamic', value)
 }
 </script>

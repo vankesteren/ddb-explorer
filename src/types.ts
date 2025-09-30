@@ -21,6 +21,7 @@ export const MapColorConfigSchema = z.object({
   numBins: z.number().int().positive().optional(),
   colorScheme: z.enum(colorSchemes).optional(),
   dynamic: z.boolean().optional(),
+  colorSchemeInverted: z.boolean().optional(),
 }).refine(
   v => v.minValue <= v.maxValue,
   { message: "minValue must be <= maxValue", path: ["minValue"] }

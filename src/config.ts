@@ -16,6 +16,7 @@ export const appConfig: AppConfig = {
     maxValue: 0.4,
     colorScheme: "viridis",
     dynamic: false,
+    colorSchemeInverted: false,
   },
   initialFiltering: {
     "year": "1918",

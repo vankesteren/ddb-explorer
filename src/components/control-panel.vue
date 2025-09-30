@@ -30,9 +30,8 @@
             :available-filter-options="availableFilterOptions"
             :config="config"
             @filter-changed="handleSelectionChanged"
-            @color-scheme-changed="handleColorSchemeChanged"
+            @map-config-changed="handleMapConfigChanged"
             @toggle-data-import="emit('toggle-data-import')"
-            @dynamic-legend-changed="handleDynamicLegendChanged"
           />
         </div>
       </div>
@@ -44,9 +43,8 @@
         :available-filter-options="availableFilterOptions"
         :config="config"
         @filter-changed="handleSelectionChanged"
-        @color-scheme-changed="handleColorSchemeChanged"
+        @map-config-changed="handleMapConfigChanged"
         @toggle-data-import="emit('toggle-data-import')"
-        @dynamic-legend-changed="handleDynamicLegendChanged"
       />
     </div>
   </div>
@@ -72,8 +70,7 @@ const props = defineProps({
 const emit = defineEmits([
   'filter-changed',
   'toggle-data-import',
-  'color-scheme-changed',
-  'dynamic-legend-changed'
+  'map-config-changed',
 ])
 
 // Mobile panel state
@@ -84,12 +81,8 @@ function handleSelectionChanged(categoryName, value) {
   emit('filter-changed', categoryName, value)
 }
 
-function handleColorSchemeChanged(value) {
-  emit('color-scheme-changed', value)
-}
-
-function handleDynamicLegendChanged(value) {
-  emit('dynamic-legend-changed', value)
+function handleMapConfigChanged(value) {
+  emit('map-config-changed', value)
 }
 
 function toggleControlsPanel() {

@@ -52,8 +52,7 @@
         :availableFilterOptions="availableFilterOptions"
         :config="config"
         @filter-changed="handleFilterChanged"
-        @color-scheme-changed="handleColorSchemeChanged"
-        @dynamic-legend-changed="handleDynamicLegendChanged"
+        @map-config-changed="handleMapConfigChanged"
         @toggle-data-import="toggleDataImportWizard"
       />
     </div>
@@ -108,19 +107,11 @@ function handleFilterChanged(categoryName: string, value: any) {
   selectedFilters.value[categoryName] = value
 }
 
-function handleDynamicLegendChanged(bool: boolean) {
-  console.log(`[App] dynamic legend set to: ${bool}`)
+function handleMapConfigChanged(value) {
+  console.log(`[App] map config changed to:`, value)
   config.value = {
     ...config.value,
-    mapColorConfig: { ...config.value.mapColorConfig, dynamic: bool }
-  }
-}
-
-function handleColorSchemeChanged(s: string) {
-  console.log(`[App] color scheme set to: ${s}`)
-  config.value = {
-    ...config.value,
-    mapColorConfig: { ...config.value.mapColorConfig, colorScheme: s }
+    mapColorConfig: value
   }
 }
 

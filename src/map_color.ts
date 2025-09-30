@@ -11,8 +11,9 @@ export class MapColor {
   private readonly colors: string[]
   private readonly borderColor: string
   private readonly colorScheme: string
+  private readonly colorSchemeInverted: string
 
-  constructor({ minValue, maxValue, numBins = 7, colorScheme = "viridis" }: MapColorConfig) {
+  constructor({ minValue, maxValue, numBins = 7, colorScheme = "viridis", colorSchemeInverted = false }: MapColorConfig) {
     const bins = Math.max(1, Math.floor(numBins))
     const lo = Math.min(minValue, maxValue)
     const hi = Math.max(minValue, maxValue)
@@ -21,25 +22,40 @@ export class MapColor {
 
     this.thresholds = Array.from({ length: bins + 1 }, (_, i) => lo + i * binSize)
     this.colorScheme = colorScheme
+    this.colorSchemeInverted = colorSchemeInverted
     this.borderColor = this.getOptimalBorderColor()
 
     if (colorScheme === "no colorscheme") {
-      this.colors = Array.from({ length: bins }, () => '#FFFFFF')
+      this.colors = Array.from({ length: bins }, () => this.colorSchemeInverted ? '#000000' : '#FFFFFF')
     } else {
       const colorInterpolator = this.getColorInterpolator()
       this.colors = Array.from({ length: bins }, (_, i) => colorInterpolator((i + 0.5) / bins))
+
+      // check if colors need to be reversed
+      if (this.colorSchemeInverted) {
+        this.colors.reverse()
+      }
     }
   }
 
   private getOptimalBorderColor(): string {
-    const dark: ColorScheme[] = ['inferno', 'magma', 'plasma', 'viridis', 'turbo', 'cubehelix', 'cividis', 'interpolate']
-    const light: ColorScheme[] = ['warm', 'cool']
+    const darkSchemes: ColorScheme[] = ['inferno', 'magma', 'plasma', 'viridis', 'turbo', 'cubehelix', 'cividis', 'interpolate']
+    const lightSchemes: ColorScheme[] = ['warm', 'cool']
 
-    if (this.colorScheme && dark.includes(this.colorScheme)) return '#FFFFFF'
-    if (this.colorScheme && light.includes(this.colorScheme)) return '#000000'
-    if (this.colorScheme === "no colorscheme") return "#000000"
+    let borderColor = '#000000' // Default for 'no colorscheme' and unknown schemes
 
-    return '#000000' // Default fallback
+    if (this.colorScheme && darkSchemes.includes(this.colorScheme)) {
+      borderColor = '#FFFFFF'
+    } else if (this.colorScheme && lightSchemes.includes(this.colorScheme)) {
+      borderColor = '#000000'
+    }
+
+    // Invert border color if color scheme is inverted
+    if (this.colorSchemeInverted) {
+      borderColor = borderColor === '#FFFFFF' ? '#000000' : '#FFFFFF'
+    }
+
+    return borderColor
   }
 
   private getColorInterpolator(): (t: number) => string {
@@ -60,10 +76,6 @@ export class MapColor {
   }
 
   getBinColor(value: number): string {
-    if (value === undefined || this.colorScheme === "no colorscheme") {
-      return "#FFFFFF" // The default missing data color
-    }
-
     const i = this.thresholds.findIndex((t, j) =>
       value >= t && value < this.thresholds[j + 1]
     )
@@ -105,7 +117,8 @@ export function createMapColor(
       return new MapColor({
         minValue: minValue,
         maxValue: maxValue,
-        colorScheme: config.mapColorConfig.colorScheme
+        colorScheme: config.mapColorConfig.colorScheme,
+        colorSchemeInverted: config.mapColorConfig.colorSchemeInverted
       })
     }
     default:
