@@ -59,7 +59,9 @@
       </div>
     </section>
 
+    <!--
     <!-- CARD: DATA IMPORT -->
+    <div v-if="false">
     <section class="rounded-lg border border-gray-200 shadow-sm bg-white">
       <!-- Header -->
       <header class="px-4 py-3 border-b border-gray-100">
@@ -93,6 +95,7 @@
         </button>
       </div>
     </section>
+    </div>
   </div>
 </template>
 
