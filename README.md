@@ -54,13 +54,117 @@ npm run dev
 
 ## Use this application for yourself
 
-### Forking
+If you want to use this application you can fork it and add your own files and configuration. 
+Your map will be displayed on the Github page of your fork and you can share it with your own audience!
 
-You can fork this repository and set your own map as the default map. You can share your own map through Github pages with your own audience!
+### Configuration Modes
+
+map-explorer can be configure by changing the configuration file in `/src/config.ts`
+The application supports two distinct configuration modes, determined by the `kind` field:
+
+#### 1. GeoJSON Only (`geojson-only`)
+
+Use this mode if you only want to display a map and nothing else.
+
+**Fields:**
+
+- **`kind`** (required): Must be set to `"geojson-only"`
+- **`geojsonFileName`** (required, string): Filename of the GeoJSON file. Put your file in the `/public` folder
+- **`idColumnGeojson`** (required, string): The property name in the GeoJSON features that serves as the unique identifier
+- **`legendTitle`** (optional, string): Title to display in the map legend
+
+**Example:**
+
+```javascript
+export const appConfig: AppConfig = {
+  "kind": "geojson-only",
+  "geojsonFileName": "regions.geojson",
+  "idColumnGeojson": "region_id",
+  "legendTitle": "Regional Data"
+}
+```
+
+---
+
+#### 2. GeoJSON + External Data File (`geojson-datafile`)
+
+Use this mode when you have a separate data file (e.g., CSV or parquet file) that needs to be joined with your GeoJSON geometries. The data file should contain a column that holds the region id's in the GeoJSON and a valueColumn that holds numberic values that are used to color the regions. It supports categorical columns that can be used as filters. Given an applied filter each region should map to a numerical value.
+
+**Fields:**
+
+- **`kind`** (required): Must be set to `"geojson-datafile"`
+- **`geojsonFileName`** (required, string): Filename of the GeoJSON file. Put the file in the `/public` folder
+- **`dataFileName`** (required, string): Filename of the data file. Put the file in the `/public` folder
+- **`idColumnGeojson`** (required, string): The property name in the GeoJSON features that serves as the unique identifier
+- **`idColumnDataFile`** (required, string): The column name of the column in the data file that holds the same unique id's in the GeoJSON
+- **`categoryColumns`** (required, array of strings): Column names that represent categorical/filter dimensions
+- **`valueColumn`** (required, string): The column name containing the numeric values to visualize
+- **`legendTitle`** (optional, string): Title to display in the map legend
+- **`mapColorConfig`** (required, object): Configuration for color mapping (see [Map Color Configuration](#map-color-configuration))
+- **`initialFiltering`** (optional, object): Initial filter state as key-value pairs where keys are category column names and values are the selected categories
+
+**Example:**
+
+```javascript
+export const appConfig: AppConfig = {
+  kind: "geojson-datafile",
+  categoryColumns: ["year", "month", "disease"],
+  valueColumn: "mention_rate",
+  idColumnGeojson: "cbscode",
+  idColumnDataFile: "cbscode",
+  dataFileName: "disease_database_v1.2.parquet",
+  geojsonFileName: "nl1869.geojson",
+  legendTitle: "Mention Rate",
+  mapColorConfig: {
+    minValue: 0,
+    maxValue: 0.4,
+    colorScheme: "viridis",
+    dynamic: false,
+    colorSchemeInverted: false,
+  },
+  initialFiltering: {
+    "year": "1918",
+    "month": "10",
+    "disease": "influenza",
+  },
+}
+```
+
+#### Map Color Configuration
+
+The `mapColorConfig` object controls how numeric values are mapped to colors on the map.
+
+**Fields:**
+
+- **`minValue`** (required, number): The minimum value for the color scale.
+- **`maxValue`** (required, number): The maximum value for the color scale.
+- **`numBins`** (optional, positive integer): Number of discrete color bins to use.
+- **`colorScheme`** (optional, string): The color scheme to apply. If not specified, defaults to a standard scheme
+- **`dynamic`** (optional, boolean): If `true`, the color scale adjusts dynamically based on the current filtered data. If `false` or not specified, uses the fixed `minValue` and `maxValue`
+- **`colorSchemeInverted`** (optional, boolean): If `true`, inverts the color scheme (reverses the color order)
+
+##### Available Color Schemes
+
+The following color schemes are available:
+
+- `viridis` - Perceptually uniform, colorblind-friendly (purple to yellow)
+- `plasma` - Perceptually uniform (purple to pink to yellow)
+- `inferno` - Perceptually uniform (black to purple to yellow)
+- `magma` - Perceptually uniform (black to purple to white)
+- `cividis` - Colorblind-optimized, blue to yellow
+- `turbo` - Rainbow-like, high contrast
+- `warm` - Warm colors (dark red to yellow)
+- `cool` - Cool colors (cyan to magenta)
+- `cubehelix` - Perceptually uniform spiral through color space
+- `no colorscheme` - No color scheme applied
+
+#### Configuration errors
+
+If you misspecified the `/src/configuration.ts` the app won't load an an error message will be shown in the browser console.
 
 ### Embedding 
 
-If you want to embed this application into your own website you can do so by including it into an iframe, like so:
+If you want to embed map-explorer you can do so by including it into an iframe, like so:
 
 ```html
 <iframe 
