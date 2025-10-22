@@ -1,64 +1,73 @@
 <template>
-  <div class="flex flex-col items-center justify-center min-h-screen w-full bg-gray-50 relative" :class="{ 'bg-gray-400': isDataImportWizardOpen }">
-    <!-- DataImportWizard overlay -->
-    <div
-      v-if="isDataImportWizardOpen"
-      class="fixed inset-0 z-100 bg-opacity-50 bg-white"
-    >
-      <div class="bg-white rounded-lg">
-        <div class="p-4 border-b border-gray-300 flex justify-between items-center">
-          <button
-            @click="toggleDataImportWizard"
-            class="text-gray-500 hover:text-gray-700 p-1"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <DataImportWizard @import-done="handleImport" />
-      </div>
-    </div>
-
+  <div class="items-center justify-center min-h-screen w-full">
     <!-- Main content - only show when app is ready and regionData exists -->
     <div
       v-if="isAppReady"
-      class="w-full h-screen flex transition-all duration-300"
-      :class="{ 'filter grayscale opacity-50': isDataImportWizardOpen }"
+      class="w-full h-screen flex"
     >
       <!-- Map container -->
-      <div class="flex-1 flex flex-col relative p-5">
+      <div class="flex-1 flex flex-col m-2 p-2 bg-gray-50 border border-gray-300 rounded ">
         <div class="w-full h-full flex flex-col">
           <div class="flex-1">
             <Map
               :geojson="geojsonData"
               :regionData="regionData"
               :config="config"
-              class="w-full h-full"
             />
           </div>
-          <!-- Legend below the map -->
-          <div class="w-full mt-4">
+        </div>
+
+        <!-- Map information -->
+        <div class="absolute top-4 left-4">
+          <Button>
+            <InformationIcon />
+          </Button>
+          <div
+            class="absolute top-0 ml-2 left-full w-100 h-25 bg-white border rounded"
+            :hidden="!showInfo"
+          >
+            banaan
+          </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="absolute bottom-4 left-4">
+          <Button v-model="isSelected">
+            <BarchartIcon />
+          </Button>
+          <div
+            class="absolute bottom-0 ml-2 left-full w-100 h-25 bg-white border rounded"
+            :hidden="!showLegend"
+          >
             <LegendHistogram
               :regionData="regionData"
               :config="config"
             />
           </div>
         </div>
-      </div>
 
-      <!-- Controls panel -->
-      <ControlPanel
-        :availableFilterOptions="availableFilterOptions"
-        :config="config"
-        @filter-changed="handleFilterChanged"
-        @map-config-changed="handleMapConfigChanged"
-        @toggle-data-import="toggleDataImportWizard"
-      />
+        <!-- Control Panel -->
+        <div class="absolute top-4 right-4">
+          <Button>
+            <SettingsIcon />
+          </Button>
+          <div
+            class="absolute top-full right-0 mt-2 border rounded h-100 overflow-y-auto bg-white"
+            :hidden="!showControls"
+          >
+            <ControlPanel
+              :availableFilterOptions="availableFilterOptions"
+              :config="config"
+              @filter-changed="handleFilterChanged"
+              @map-config-changed="handleMapConfigChanged"
+            />
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Loading App -->
-    <div v-else class="w-full h-full flex items-center justify-center" >
+    <div v-else class="w-full h-full flex items-center justify-center">
       <ChartSkeleton />
     </div>
   </div>
@@ -67,11 +76,17 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from "vue"
 
+// icons
+//import InformationIcon from "./components/icons/InformationIcon.vue"
+import BarchartIcon from "./components/icons/BarchartIcon.vue"
+import SettingsIcon from "./components/icons/SettingsIcon.vue"
+import InformationIcon from "./components/icons/InformationIcon.vue"
+import Button from "./components/button.vue"
+
 // components
 import Map from "./components/map.vue"
 import LegendHistogram from "./components/legend-histogram.vue"
 import ChartSkeleton from "./components/chart-skeleton.vue"
-import DataImportWizard from "./components/wizard.vue"
 import ControlPanel from "./components/control-panel.vue"
 
 import { fetchPublicFile } from "./helpers.ts"
@@ -81,13 +96,29 @@ import { ProcessorFactory } from "./processors/processor_factory"
 import { appConfig } from "./config"
 import { validateAppConfig } from "./types.ts"
 
+// --- NEW: UI toggles ---
+const showInfo = ref(false)
+const showLegend = ref(false)
+const showControls = ref(false)
+
+const isSelected = ref(false)
+
+function toggleInfo() {
+  showInfo.value = !showInfo.value
+}
+function toggleLegend() {
+  showLegend.value = !showLegend.value
+}
+function toggleControls() {
+  showControls.value = !showControls.value
+}
 
 // App state
-const dataProcessor = ref(undefined)
+const dataProcessor = ref<any | undefined>(undefined)
 const geojsonData = ref<GeoJSON | null>(undefined)
 const regionData = ref<RegionData[] | null>(undefined)
 
-let config = ref(undefined)
+let config = ref<any>(undefined)
 config.value = validateAppConfig(appConfig)
 
 // Filter state
@@ -96,18 +127,13 @@ const selectedFilters = ref<{ [key: string]: string }>({})
 
 // UI state
 const isAppReady = ref(false)
-const isDataImportWizardOpen = ref(false)
 
 // Map control handlers
-function toggleDataImportWizard() {
-  isDataImportWizardOpen.value = !isDataImportWizardOpen.value
-}
-
 function handleFilterChanged(categoryName: string, value: any) {
   selectedFilters.value[categoryName] = value
 }
 
-function handleMapConfigChanged(value) {
+function handleMapConfigChanged(value: any) {
   console.log(`[App] map config changed to:`, value)
   config.value = {
     ...config.value,
@@ -119,12 +145,12 @@ function resetSelectedFilters() {
   selectedFilters.value = {}
 }
 
-async function setMapControls(dataProcessor) {
+async function setMapControls(dp: any) {
   resetSelectedFilters()
-  if (dataProcessor) {
-    availableFilterOptions.value = await dataProcessor.extractFilterCategories(config.value.categoryColumns)
+  if (dp) {
+    availableFilterOptions.value = await dp.extractFilterCategories(config.value.categoryColumns)
     for (const [categoryName, values] of Object.entries(availableFilterOptions.value)) {
-      handleFilterChanged(categoryName, values[0])
+      handleFilterChanged(categoryName, (values as string[])[0])
     }
   } else {
     availableFilterOptions.value = {}
@@ -132,11 +158,10 @@ async function setMapControls(dataProcessor) {
 }
 
 // Import handlers
-async function handleImport(importedConfig, importedGeojson, importedProcessor) {
+async function handleImport(importedConfig: any, importedGeojson: GeoJSON, importedProcessor: any) {
   console.log("[App] Importing new data")
 
   isAppReady.value = false
-  toggleDataImportWizard()
 
   config.value = importedConfig
   geojsonData.value = importedGeojson
@@ -151,58 +176,54 @@ async function handleImport(importedConfig, importedGeojson, importedProcessor) 
 async function initializeApp() {
   console.log("[App] App Initializing")
 
-    // Load Geojson
-    const geojsonFile = await fetchPublicFile(config.value.geojsonFileName)
-    geojsonData.value = JSON.parse(await geojsonFile.text()) as GeoJSON
+  // Load Geojson
+  const geojsonFile = await fetchPublicFile(config.value.geojsonFileName)
+  geojsonData.value = JSON.parse(await geojsonFile.text()) as GeoJSON
 
-    // config dependend initialization
-    switch (config.value.kind) {
-      case "geojson-only":
-        break
+  // config dependent initialization
+  switch (config.value.kind) {
+    case "geojson-only":
+      break
+    case "geojson-datafile": {
+      const dataFile = await fetchPublicFile(config.value.dataFileName)
+      dataProcessor.value = await ProcessorFactory.create(dataFile)
+      await setMapControls(dataProcessor.value)
 
-      case "geojson-datafile":
-        // Load data file and create Processor
-        const dataFile = await fetchPublicFile(config.value.dataFileName)
-        dataProcessor.value = await ProcessorFactory.create(dataFile)
-
-        // Determine the data filters for the map control from the data
-        await setMapControls(dataProcessor.value)
-
-        // Either use an initial filtering from the config or one set in the config file
-        const initialFilters = config.value.initialFiltering || selectedFilters.value
-        regionData.value = await dataProcessor.value.getRegionData(
-          initialFilters,
-          config.value.idColumnDataFile,
-          config.value.valueColumn
-        )
-        break
-
-      case "geojson-embedded":
-        break
-
-      default: {
-        throw new Error(`Unhandled AppConfig kind: ${JSON.stringify(config)}`)
-      }
+      const initialFilters = config.value.initialFiltering || selectedFilters.value
+      regionData.value = await dataProcessor.value.getRegionData(
+        initialFilters,
+        config.value.idColumnDataFile,
+        config.value.valueColumn
+      )
+      break
     }
+    case "geojson-embedded":
+      break
+    default:
+      throw new Error(`Unhandled AppConfig kind: ${JSON.stringify(config.value)}`)
+  }
 
   isAppReady.value = true
   console.log("[App] App initialized")
 }
 
 // Watch filter if filter changed query new data
-watch(selectedFilters, async () => {
-  if (isAppReady.value !== true) {
-    return
-  }
-  console.log("[App] Filter changed querying new data")
-  regionData.value = await dataProcessor.value.getRegionData(
-    selectedFilters.value,
-    config.value.idColumnDataFile,
-    config.value.valueColumn
-  )
-}, { deep: true })
+watch(
+  selectedFilters,
+  async () => {
+    if (isAppReady.value !== true) return
+    console.log("[App] Filter changed querying new data")
+    regionData.value = await dataProcessor.value.getRegionData(
+      selectedFilters.value,
+      config.value.idColumnDataFile,
+      config.value.valueColumn
+    )
+  },
+  { deep: true }
+)
 
 onMounted(async () => {
   await initializeApp()
 })
 </script>
+

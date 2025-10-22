@@ -1,5 +1,5 @@
 <template>
-  <div class="relative w-full h-full border border-gray-300 rounded p-2">
+  <div class="w-full h-full">
     <svg class="w-full h-full" ref="svgRef"></svg>
     <button
       v-show="isZoomedRef"
@@ -107,17 +107,36 @@ function renderMap() {
   // Setup zoom behavior
   zoomBehavior = d3.zoom()
     .scaleExtent([0.5, 8])
-    .on('zoom', (event) => {
+    .on('start', () => {
+      // Hide tooltip at start of zoom
       tooltipRef.value.style("visibility", "hidden")
+
+      // Disable pointer events during zoom for performance
+      paths.style('pointer-events', 'none')
+
+      // Simplify rendering: reduce stroke width during zoom
+      paths.attr('stroke-width', 0)
+    })
+    .on('zoom', (event) => {
       const { transform } = event
       currentTransform = transform // Store current transform
-      g.attr('transform', transform)
+
+      // Use CSS transform for GPU acceleration (Tier 1 optimization)
+      g.style('transform', `translate(${transform.x}px, ${transform.y}px) scale(${transform.k})`)
+      g.style('transform-origin', '0 0')
 
       // Update zoom state
       isZoomedRef.value = transform.k !== 1 || transform.x !== 0 || transform.y !== 0
     })
+    .on('end', () => {
+      // Re-enable pointer events after zoom
+      paths.style('pointer-events', 'auto')
 
-  svg.call(zoomBehavior)
+      // Restore full quality rendering: restore stroke width
+      paths.attr('stroke-width', 0.5)
+    })
+
+   svg.call(zoomBehavior)
 
   // Restore previous zoom state
   if (currentTransform && (currentTransform.k !== 1 || currentTransform.x !== 0 || currentTransform.y !== 0)) {
@@ -160,9 +179,6 @@ function renderMap() {
         .transition()
         .duration(100)
         .attr('transform', `translate(${centerX}, ${centerY}) scale(1.05) translate(${-centerX}, ${-centerY})`)
-        .attr('fill', (d) => {
-          return getColor(d)
-        })
 
       // Get region data for tooltip
       const regionId = d.properties[idColumnGeojson]
@@ -224,9 +240,6 @@ function renderMap() {
     })
     .on('mouseenter', function(event, d) {
       d3.select(this)
-        .attr('fill', (d) => {
-          return getColor(d)
-        })
     })
     .on('mouseout', function(event, d) {
       d3.select(this)
@@ -263,6 +276,7 @@ function renderMap() {
 const resizeObserver = new ResizeObserver(entries => {
   for (let entry of entries) {
     renderMap()
+    tooltipRef.value.style("visibility", "hidden")
   }
 });
 

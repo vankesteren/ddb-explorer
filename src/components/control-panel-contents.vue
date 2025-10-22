@@ -2,16 +2,6 @@
   <div class="space-y-4">
     <!-- CARD: MAP CONTROLS -->
     <section class="rounded-lg border border-gray-200 shadow-sm bg-white">
-      <!-- Header -->
-      <header class="px-4 py-3 border-b border-gray-100">
-        <div class="flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5 2V6l5-2 6 2 5-2v16l-5 2-6-2zM9 4v16M15 6v16"/>
-          </svg>
-          <h2 class="font-semibold text-gray-900">Map Controls</h2>
-        </div>
-      </header>
-
       <!-- Body -->
       <div class="p-4 space-y-6">
         <!-- Filter Options -->
