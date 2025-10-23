@@ -20,8 +20,13 @@
             <InformationIcon />
           </Button>
           <div
-            class="absolute top-0 ml-2 p-5 left-full w-[550px]
-            card-box bg-white"
+            class="absolute top-0 left-full ml-2 p-5 bg-white card-box
+                   w-[550px]
+                   max-[685px]:w-[80vw]
+                   max-[685px]:left-0
+                   max-[685px]:top-full
+                   max-[685px]:ml-0
+                   max-[685px]:mt-2"
             v-show="showInfo"
           >
             <div class="text-24 underline underline-offset-8 mb-2 font-bold">
@@ -52,8 +57,9 @@
             <BarchartIcon />
           </Button>
           <div
-            class="absolute bottom-0 ml-2 left-full w-100 h-25
-            card-box bg-white"
+            class="absolute bottom-0 ml-2 left-full w-100 h-25 card-box bg-white
+             w-100
+             max-[485px]:w-[80vw]"
             v-show="showLegend"
           >
             <LegendHistogram
@@ -69,9 +75,9 @@
             <SettingsIcon />
           </Button>
             <div
-              class="absolute top-full right-0 mt-2 w-75 overflow-y-auto
-              card-box bg-white"
-             v-show="showControls"
+              class="absolute top-full right-0 mt-2 overflow-y-auto card-box bg-white w-75"
+              style="max-height: calc(100vh - 10rem);"
+              v-show="showControls"
             >
             <ControlPanel
               :availableFilterOptions="availableFilterOptions"
