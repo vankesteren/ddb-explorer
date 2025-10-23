@@ -1,1 +1,26 @@
 @import "tailwindcss";
+@import "@fontsource/fira-sans";
+
+/* Define custom theme variables */
+@theme {
+  /* Colors */
+  --color-primary: #08a4b0;
+
+  /* Font families */
+  --font-sans: "Fira Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Apply the font globally */
+@layer base {
+  html {
+    font-family: var(--font-sans);
+  }
+}
+
+@layer components {
+  .card-box {
+    border: 1px solid #343434;
+    border-radius: 8px;
+    box-shadow: 1.5px 1.5px 0px 0.5px #343434;
+  }
+}

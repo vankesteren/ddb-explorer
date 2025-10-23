@@ -1,12 +1,9 @@
 <template>
-  <div class="items-center justify-center min-h-screen w-full">
+  <div class="items-center justify-center h-screen w-full">
     <!-- Main content - only show when app is ready and regionData exists -->
-    <div
-      v-if="isAppReady"
-      class="w-full h-screen flex"
-    >
+    <div v-if="isAppReady" class="w-full h-screen flex">
       <!-- Map container -->
-      <div class="flex-1 flex flex-col m-2 p-2 bg-gray-50 border border-gray-300 rounded ">
+      <div class="flex-1 flex flex-col p-2 bg-gray-50 border border-gray-300 rounded">
         <div class="w-full h-full flex flex-col">
           <div class="flex-1">
             <Map
@@ -19,25 +16,45 @@
 
         <!-- Map information -->
         <div class="absolute top-4 left-4">
-          <Button>
+          <Button v-model="showInfo">
             <InformationIcon />
           </Button>
           <div
-            class="absolute top-0 ml-2 left-full w-100 h-25 bg-white border rounded"
-            :hidden="!showInfo"
+            class="absolute top-0 ml-2 p-5 left-full w-[550px]
+            card-box bg-white"
+            v-show="showInfo"
           >
-            banaan
+            <div class="text-24 underline underline-offset-8 mb-2 font-bold">
+              Historical disease mention rates
+            </div>
+            <div class="text-[14px]">
+              This map contains data gathered via Delpher and processed by the ODISSEI SoDa team. Each
+              municipality gets a "mention rate" assigned, which is a proxy for the actual disease
+              pressure in this region. See
+              <a
+                href="https://github.com/sodascience/disease_database"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="underline"
+              >
+                https://github.com/sodascience/disease_database
+              </a>.
+            </div>
+            <p class="float-right text-sm text-gray-600">
+              made with ♡ by <a href="https://odissei-soda.nl/" class="underline" target="_blank" rel="noopener noreferrer">@sodascience</a>
+            </p>
           </div>
         </div>
 
         <!-- Legend -->
         <div class="absolute bottom-4 left-4">
-          <Button v-model="isSelected">
+          <Button v-model="showLegend">
             <BarchartIcon />
           </Button>
           <div
-            class="absolute bottom-0 ml-2 left-full w-100 h-25 bg-white border rounded"
-            :hidden="!showLegend"
+            class="absolute bottom-0 ml-2 left-full w-100 h-25
+            card-box bg-white"
+            v-show="showLegend"
           >
             <LegendHistogram
               :regionData="regionData"
@@ -48,13 +65,14 @@
 
         <!-- Control Panel -->
         <div class="absolute top-4 right-4">
-          <Button>
+          <Button v-model="showControls">
             <SettingsIcon />
           </Button>
-          <div
-            class="absolute top-full right-0 mt-2 border rounded h-100 overflow-y-auto bg-white"
-            :hidden="!showControls"
-          >
+            <div
+              class="absolute top-full right-0 mt-2 w-75 overflow-y-auto
+              card-box bg-white"
+             v-show="showControls"
+            >
             <ControlPanel
               :availableFilterOptions="availableFilterOptions"
               :config="config"
@@ -67,8 +85,12 @@
     </div>
 
     <!-- Loading App -->
-    <div v-else class="w-full h-full flex items-center justify-center">
-      <ChartSkeleton />
+    <div v-else
+      class="w-full h-full flex items-center justify-center
+        animate-[pulse_2s_ease-in-out_infinite]
+      "
+    >
+      <LoadingMap />
     </div>
   </div>
 </template>
@@ -77,10 +99,10 @@
 import { ref, onMounted, watch } from "vue"
 
 // icons
-//import InformationIcon from "./components/icons/InformationIcon.vue"
 import BarchartIcon from "./components/icons/BarchartIcon.vue"
 import SettingsIcon from "./components/icons/SettingsIcon.vue"
 import InformationIcon from "./components/icons/InformationIcon.vue"
+import LoadingMap from "./components/icons/LoadingMap.vue"
 import Button from "./components/button.vue"
 
 // components
@@ -96,30 +118,17 @@ import { ProcessorFactory } from "./processors/processor_factory"
 import { appConfig } from "./config"
 import { validateAppConfig } from "./types.ts"
 
-// --- NEW: UI toggles ---
+// --- UI toggles ---
 const showInfo = ref(false)
 const showLegend = ref(false)
 const showControls = ref(false)
-
-const isSelected = ref(false)
-
-function toggleInfo() {
-  showInfo.value = !showInfo.value
-}
-function toggleLegend() {
-  showLegend.value = !showLegend.value
-}
-function toggleControls() {
-  showControls.value = !showControls.value
-}
 
 // App state
 const dataProcessor = ref<any | undefined>(undefined)
 const geojsonData = ref<GeoJSON | null>(undefined)
 const regionData = ref<RegionData[] | null>(undefined)
 
-let config = ref<any>(undefined)
-config.value = validateAppConfig(appConfig)
+let config = ref<any>(validateAppConfig(appConfig))
 
 // Filter state
 const availableFilterOptions = ref<{ [key: string]: string[] }>({})
@@ -150,7 +159,7 @@ async function setMapControls(dp: any) {
   if (dp) {
     availableFilterOptions.value = await dp.extractFilterCategories(config.value.categoryColumns)
     for (const [categoryName, values] of Object.entries(availableFilterOptions.value)) {
-      handleFilterChanged(categoryName, (values as string[])[0])
+      selectedFilters.value[categoryName] = (values as string[])[0]
     }
   } else {
     availableFilterOptions.value = {}
@@ -160,7 +169,6 @@ async function setMapControls(dp: any) {
 // Import handlers
 async function handleImport(importedConfig: any, importedGeojson: GeoJSON, importedProcessor: any) {
   console.log("[App] Importing new data")
-
   isAppReady.value = false
 
   config.value = importedConfig
@@ -168,7 +176,6 @@ async function handleImport(importedConfig: any, importedGeojson: GeoJSON, impor
   dataProcessor.value = importedProcessor
 
   await setMapControls(dataProcessor.value)
-
   isAppReady.value = true
 }
 
@@ -212,7 +219,7 @@ watch(
   selectedFilters,
   async () => {
     if (isAppReady.value !== true) return
-    console.log("[App] Filter changed querying new data")
+    console.log("[App] Filter changed querying new data]")
     regionData.value = await dataProcessor.value.getRegionData(
       selectedFilters.value,
       config.value.idColumnDataFile,
@@ -226,4 +233,3 @@ onMounted(async () => {
   await initializeApp()
 })
 </script>
-

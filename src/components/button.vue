@@ -1,6 +1,6 @@
 <template>
   <div
-    class="relative cursor-pointer"
+    class="cursor-pointer"
     :class="{ 'hovered': isHovered, 'selected': isSelected }"
     :style="{
       width: `${size}px`,
@@ -25,7 +25,7 @@
     <!-- Main white circle with border -->
     <div
       class="absolute rounded-full transition-all duration-200"
-      :class="isSelected ? 'bg-[#eeeeee] border-[#232323]' : 'bg-white border-[#343434]'"
+      :class="isSelected ? 'bg-[#eeeeee]' : 'bg-white border-[#343434]'"
       :style="{
         left: isHovered || isSelected ? `${1.5 * scale}px` : 0,
         top: isHovered || isSelected ? `${2.5 * scale}px` : 0,
