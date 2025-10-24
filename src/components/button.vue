@@ -13,7 +13,7 @@
   >
     <!-- Background circle (shadow effect) -->
     <div
-      class="absolute rounded-full transition-colors duration-200"
+      class="absolute rounded-full transition-colors duration-100"
       :class="isSelected ? 'bg-[#232323]' : 'bg-[#343434]'"
       :style="{
         left: `${2.5 * scale}px`,
@@ -24,7 +24,7 @@
     />
     <!-- Main white circle with border -->
     <div
-      class="absolute rounded-full transition-all duration-200"
+      class="absolute rounded-full transition-all duration-100"
       :class="isSelected ? 'bg-[#eeeeee]' : 'bg-white border-[#343434]'"
       :style="{
         left: isHovered || isSelected ? `${1.5 * scale}px` : 0,
@@ -36,7 +36,7 @@
     />
     <!-- Icon slot with positioning -->
     <div
-      class="absolute pointer-events-none transition-all duration-200 flex items-center justify-center"
+      class="absolute pointer-events-none transition-all duration-100 flex items-center justify-center"
       :style="{
         left: isHovered || isSelected ? `${1.5 * scale}px` : 0,
         top: isHovered || isSelected ? `${2.5 * scale}px` : 0,
