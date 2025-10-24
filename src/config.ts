@@ -18,24 +18,23 @@ export const appConfig: AppConfig = {
           https://github.com/sodascience/disease_database
         </a>.`
   },
-  categoryColumns: ["year", "month", "disease"],
+  categoryColumns: ["year", "disease"],
   valueColumn: "mention_rate",
   idColumnGeojson: "cbscode",
   idColumnDataFile: "cbscode",
-  dataFileName: "disease_database_v1.2.parquet",
+  dataFileName: "disease_database_yearly_v1.2.parquet",
   geojsonFileName: "nl1869.geojson",
   legendTitle: "Mention Rate",
   mapColorConfig: {
-    minValue: 0,
-    maxValue: 0.4,
+    minValue: 0.000,
+    maxValue: 0.015,
     colorScheme: "viridis",
     dynamic: false,
     colorSchemeInverted: false,
   },
   initialFiltering: {
-    "year": "1918",
-    "month": "10",
-    "disease": "influenza",
+    "year": "1866",
+    "disease": "cholera",
   },
 }
 
