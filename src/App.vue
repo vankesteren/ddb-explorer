@@ -91,7 +91,6 @@ import Button from "./components/button.vue"
 // components
 import Map from "./components/map.vue"
 import LegendHistogram from "./components/legend-histogram.vue"
-import ChartSkeleton from "./components/chart-skeleton.vue"
 import ControlPanel from "./components/control-panel.vue"
 import MapDescription from "./components/map-description.vue"
 
