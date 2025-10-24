@@ -1,91 +1,158 @@
 <template>
-  <!-- Controls panel -->
-  <div class="lg:flex lg:flex-col lg:w-80 lg:bg-white lg:shadow-lg lg:h-full relative">
-    <!-- Mobile/tablet: slide-out panel -->
-    <div class="lg:hidden absolute right-0 top-0 h-full flex transition-all duration-300">
-      <!-- Controls panel toggle button (mobile only) -->
-      <button
-        @click="toggleControlsPanel"
-        class="bg-gray-800 text-white p-2 h-12 -ml-12 rounded-l-lg flex items-center justify-center shadow-lg"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-6 w-6"
-          :class="{ 'rotate-180': !isControlsPanelOpen }"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
+    <section class="bg-white">
+      <div class="p-4 space-y-6">
+        <!-- Filter Options -->
+        <div>
+          <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-600 mb-3">
+            Filter Options
+          </h3>
 
-      <!-- Mobile controls panel content -->
-      <div
-        class="bg-white h-full shadow-lg transition-all duration-300 ease-in-out overflow-y-auto"
-        :class="isControlsPanelOpen ? 'w-80' : 'w-0'"
-      >
-        <div class="p-6" :class="{ 'hidden': !isControlsPanelOpen }">
-          <ControlsPanelContent
-            :available-filter-options="availableFilterOptions"
-            :config="config"
-            @filter-changed="handleSelectionChanged"
-            @map-config-changed="handleMapConfigChanged"
-            @toggle-data-import="emit('toggle-data-import')"
-          />
+          <div v-if="hasFilterOptions" class="space-y-4">
+            <div
+              v-for="(options, categoryName) in availableFilterOptions"
+              :key="categoryName"
+            >
+              <Selection
+                :label="categoryName"
+                :options="options"
+                :defaultValue="getDefaultFilterValue(categoryName, options)"
+                @selection-changed="(value) => handleFilterChanged(categoryName, value)"
+              />
+            </div>
+          </div>
+
+          <div v-else class="text-gray-500 text-sm italic">
+            No filter options available.
+          </div>
+        </div>
+
+        <!-- Map Options -->
+        <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-600 mb-3">
+          Map Options
+        </h3>
+
+        <div v-if="config?.kind !== 'geojson-only'">
+          <div>
+            <Selection
+              :label="'Color Scheme'"
+              :options="colorSchemes"
+              :defaultValue="config.mapColorConfig.colorScheme"
+              @selection-changed="handleColorSchemeChanged"
+            />
+
+            <Checkbox
+              class="mt-3"
+              label="Invert Color Scheme"
+              :defaultValue="config.mapColorConfig.colorSchemeInverted"
+              @checkbox-changed="handleColorSchemeInvertedChanged"
+            >
+              Invert color scheme
+            </Checkbox>
+
+            <Checkbox
+              class="mt-3"
+              label="Dynamic Legend"
+              :defaultValue="config.mapColorConfig.dynamic"
+              @checkbox-changed="handleDynamicLegendChanged"
+            >
+              Calculate the min and max from the data
+            </Checkbox>
+
+            <InputField
+              class="mt-3"
+              label="Legend Minimum"
+              type="number"
+              :defaultValue="config.mapColorConfig.minValue"
+              :disabled="config.mapColorConfig.dynamic"
+              placeholder="0.00"
+              @input-changed="handleLegendMinimumChanged"
+            />
+
+            <InputField
+              class="mt-3"
+              label="Legend Maximum"
+              type="number"
+              :defaultValue="config.mapColorConfig.maxValue"
+              :disabled="config.mapColorConfig.dynamic"
+              placeholder="1.00"
+              @input-changed="handleLegendMaximumChanged"
+            />
+          </div>
+        </div>
+
+        <div v-else class="text-gray-500 text-sm italic">
+          No map options available.
         </div>
       </div>
-    </div>
-
-    <!-- Desktop: fixed panel content -->
-    <div class="hidden lg:block lg:h-full lg:overflow-y-auto lg:p-6">
-      <ControlsPanelContent
-        :available-filter-options="availableFilterOptions"
-        :config="config"
-        @filter-changed="handleSelectionChanged"
-        @map-config-changed="handleMapConfigChanged"
-        @toggle-data-import="emit('toggle-data-import')"
-      />
-    </div>
-  </div>
+    </section>
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import Selection from './selection.vue'
+import Checkbox from './checkbox.vue'
+import InputField from './input-field.vue'
+import { colorSchemes } from '../types.ts'
 
-import { ref, computed } from 'vue'
-import ControlsPanelContent from './control-panel-contents.vue'
-
-// Props
 const props = defineProps({
   availableFilterOptions: {
     type: Object,
     default: () => ({})
   },
-   config: {
-    type: Object
+  config: {
+    type: Object,
+    required: true
   }
 })
 
-// Emits
 const emit = defineEmits([
   'filter-changed',
   'toggle-data-import',
-  'map-config-changed',
+  'map-config-changed'
 ])
 
-// Mobile panel state
-const isControlsPanelOpen = ref(false)
+const hasFilterOptions = computed(() =>
+  props.availableFilterOptions && Object.keys(props.availableFilterOptions).length > 0
+)
 
-// Event handlers
-function handleSelectionChanged(categoryName, value) {
+function getDefaultFilterValue (categoryName, options) {
+  if (
+    props.config.initialFiltering !== undefined &&
+    Object.prototype.hasOwnProperty.call(props.config.initialFiltering, categoryName)
+  ) {
+    return props.config.initialFiltering[categoryName]
+  }
+  return options?.[0]
+}
+
+function handleFilterChanged (categoryName, value) {
   emit('filter-changed', categoryName, value)
 }
 
-function handleMapConfigChanged(value) {
-  emit('map-config-changed', value)
+function handleMapConfigChange (field, value) {
+  emit('map-config-changed', {
+    ...props.config.mapColorConfig,
+    [field]: value
+  })
 }
 
-function toggleControlsPanel() {
-  return isControlsPanelOpen.value = !isControlsPanelOpen.value
+function handleColorSchemeChanged (value) {
+  handleMapConfigChange('colorScheme', value)
+}
+
+function handleColorSchemeInvertedChanged (value) {
+  handleMapConfigChange('colorSchemeInverted', value)
+}
+
+function handleDynamicLegendChanged (value) {
+  handleMapConfigChange('dynamic', value)
+}
+
+function handleLegendMinimumChanged (value) {
+  handleMapConfigChange('minValue', value)
+}
+
+function handleLegendMaximumChanged (value) {
+  handleMapConfigChange('maxValue', value)
 }
 </script>

@@ -4,7 +4,7 @@
       {{ label }}
     </label>
     <select
-      class="w-full p-2 border border-gray-300 bg-white"
+      class="w-full p-2 rounded border border-gray-300 bg-white"
       v-model="selectedValue"
       @change="emitSelection"
     >

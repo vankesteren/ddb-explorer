@@ -14,6 +14,11 @@ export const colorSchemes = [
 ] as const;
 export type ColorScheme = (typeof colorSchemes)[number];
 
+export const MapDescriptionSchema = z.object({
+  title: z.string(),
+  description: z.string(),
+});
+export type MapDescription = z.infer<typeof MapDescriptionSchema>;
 
 export const MapColorConfigSchema = z.object({
   minValue: z.number(),
@@ -33,6 +38,7 @@ export const AppConfigSchema = z.discriminatedUnion("kind", [
   // 1) GeoJSON only
   z.object({
     kind: z.literal("geojson-only"),
+    mapDescription: MapDescriptionSchema,
     geojsonFileName: z.string(),
     idColumnGeojson: z.string(),
     legendTitle: z.string().optional(),
@@ -41,22 +47,11 @@ export const AppConfigSchema = z.discriminatedUnion("kind", [
   // 2) GeoJSON + external data file
   z.object({
     kind: z.literal("geojson-datafile"),
+    mapDescription: MapDescriptionSchema,
     geojsonFileName: z.string(),
     dataFileName: z.string(),
     idColumnGeojson: z.string(),
     idColumnDataFile: z.string(),
-    categoryColumns: z.array(z.string()),
-    valueColumn: z.string(),
-    legendTitle: z.string().optional(),
-    mapColorConfig: MapColorConfigSchema,
-    initialFiltering: z.record(z.string(), z.string()).optional(),
-  }),
-
-  // 3) GeoJSON with embedded data
-  z.object({
-    kind: z.literal("geojson-embedded"),
-    geojsonFileName: z.string(),
-    idColumnGeojson: z.string(),
     categoryColumns: z.array(z.string()),
     valueColumn: z.string(),
     legendTitle: z.string().optional(),

@@ -1,22 +1,23 @@
 <template>
-  <div class="relative w-full h-full border border-gray-300 rounded p-2">
+  <div class="relative w-full h-full p-2">
     <svg class="w-full h-full" ref="svgRef"></svg>
-    <button
+    <div
       v-show="isZoomedRef"
       @click="resetZoom"
-      class="absolute bottom-2 right-2 bg-white border border-gray-300 rounded-full p-2 shadow-lg
-      hover:bg-gray-50 transition-colors z--10"
-      title="Reset zoom"
     >
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-        <path d="M3 3v5h5"/>
-      </svg>
-    </button>
+      <Button
+        class="absolute bottom-2 right-2"
+      >
+        <ResetIcon />
+      </Button>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import Button from "./button.vue"
+import ResetIcon from "./icons/ResetIcon.vue"
+
 import { ref, onMounted, watch, onUnmounted } from 'vue'
 import * as d3 from 'd3'
 import { createPopper } from '@popperjs/core'
@@ -104,21 +105,6 @@ function renderMap() {
   svg.selectAll("*").remove()
   g = svg.append('g')
 
-  // Setup zoom behavior
-  zoomBehavior = d3.zoom()
-    .scaleExtent([0.5, 8])
-    .on('zoom', (event) => {
-      tooltipRef.value.style("visibility", "hidden")
-      const { transform } = event
-      currentTransform = transform // Store current transform
-      g.attr('transform', transform)
-
-      // Update zoom state
-      isZoomedRef.value = transform.k !== 1 || transform.x !== 0 || transform.y !== 0
-    })
-
-  svg.call(zoomBehavior)
-
   // Restore previous zoom state
   if (currentTransform && (currentTransform.k !== 1 || currentTransform.x !== 0 || currentTransform.y !== 0)) {
     svg.call(zoomBehavior.transform, currentTransform)
@@ -126,7 +112,7 @@ function renderMap() {
 
   if (!tooltipRef.value) {
     tooltipRef.value = d3.select("body").append("div")
-      .attr("class", "absolute bg-white border border-gray-200 rounded-md p-2 pointer-events-none text-sm shadow-md z-50")
+      .attr("class", "absolute bg-white p-2 pointer-events-none text-sm card-box z-50")
       .style("visibility", "hidden")
   }
   const projection = d3.geoMercator().fitSize([width, height], geojsonData)
@@ -148,6 +134,32 @@ function renderMap() {
     .attr('stroke-width', 0.5)
     .attr('fill', 'transparent');
 
+  // Setup zoom behavior
+  zoomBehavior = d3.zoom()
+    .scaleExtent([0.5, 8])
+    .on('start', () => {
+      tooltipRef.value.style("visibility", "hidden")
+      paths.style('pointer-events', 'none')
+
+      // Simplify rendering: reduce stroke width during zoom
+      //paths.attr('stroke-width', 0)
+    })
+    .on('zoom', (event) => {
+      const { transform } = event
+      currentTransform = transform // Store current transform
+
+      g.style('transform', `translate(${transform.x}px, ${transform.y}px) scale(${transform.k})`)
+      g.style('transform-origin', '0 0')
+
+      isZoomedRef.value = transform.k !== 1 || transform.x !== 0 || transform.y !== 0
+    })
+    .on('end', () => {
+      paths.style('pointer-events', 'auto')
+      paths.attr('stroke-width', 0.5)
+    })
+
+   svg.call(zoomBehavior)
+
   paths.attr('fill', (d) => {
       return getColor(d)
     })
@@ -160,9 +172,6 @@ function renderMap() {
         .transition()
         .duration(100)
         .attr('transform', `translate(${centerX}, ${centerY}) scale(1.05) translate(${-centerX}, ${-centerY})`)
-        .attr('fill', (d) => {
-          return getColor(d)
-        })
 
       // Get region data for tooltip
       const regionId = d.properties[idColumnGeojson]
@@ -224,9 +233,6 @@ function renderMap() {
     })
     .on('mouseenter', function(event, d) {
       d3.select(this)
-        .attr('fill', (d) => {
-          return getColor(d)
-        })
     })
     .on('mouseout', function(event, d) {
       d3.select(this)
@@ -263,6 +269,7 @@ function renderMap() {
 const resizeObserver = new ResizeObserver(entries => {
   for (let entry of entries) {
     renderMap()
+    tooltipRef.value.style("visibility", "hidden")
   }
 });
 
