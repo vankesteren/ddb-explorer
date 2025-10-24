@@ -19,35 +19,8 @@
           <Button v-model="showInfo">
             <InformationIcon />
           </Button>
-          <div
-            class="absolute top-0 left-full ml-2 p-5 bg-white card-box
-                   w-[550px]
-                   max-[685px]:w-[80vw]
-                   max-[685px]:left-0
-                   max-[685px]:top-full
-                   max-[685px]:ml-0
-                   max-[685px]:mt-2"
-            v-show="showInfo"
-          >
-            <div class="text-24 underline underline-offset-8 mb-2 font-bold">
-              Historical disease mention rates
-            </div>
-            <div class="text-[14px]">
-              This map contains data gathered via Delpher and processed by the ODISSEI SoDa team. Each
-              municipality gets a "mention rate" assigned, which is a proxy for the actual disease
-              pressure in this region. See
-              <a
-                href="https://github.com/sodascience/disease_database"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="underline"
-              >
-                https://github.com/sodascience/disease_database
-              </a>.
-            </div>
-            <p class="float-right text-sm text-gray-600">
-              made with ♡ by <a href="https://odissei-soda.nl/" class="underline" target="_blank" rel="noopener noreferrer">@sodascience</a>
-            </p>
+          <div v-show="showInfo" >
+            <MapDescription :config="config" />
           </div>
         </div>
 
@@ -59,7 +32,11 @@
           <div
             class="absolute bottom-0 ml-2 left-full w-100 h-25 card-box bg-white
              w-100
-             max-[485px]:w-[80vw]"
+             max-[485px]:w-[80vw]
+             max-[485px]:bottom-full
+             max-[485px]:left-0
+             max-[485px]:mb-2
+             overflow-hidden"
             v-show="showLegend"
           >
             <LegendHistogram
@@ -116,6 +93,7 @@ import Map from "./components/map.vue"
 import LegendHistogram from "./components/legend-histogram.vue"
 import ChartSkeleton from "./components/chart-skeleton.vue"
 import ControlPanel from "./components/control-panel.vue"
+import MapDescription from "./components/map-description.vue"
 
 import { fetchPublicFile } from "./helpers.ts"
 import type { GeoJSON } from "geojson"

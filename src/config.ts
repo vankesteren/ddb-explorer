@@ -4,6 +4,20 @@ import type {
 
 export const appConfig: AppConfig = {
   kind: "geojson-datafile",
+  mapDescription: {
+    title: "Historical disease mention rates",
+    description: `This map contains data gathered via Delpher and processed by the ODISSEI SoDa team. Each
+        municipality gets a "mention rate" assigned, which is a proxy for the actual disease
+        pressure in this region. See
+        <a
+          href="https://github.com/sodascience/disease_database"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="underline"
+        >
+          https://github.com/sodascience/disease_database
+        </a>.`
+  },
   categoryColumns: ["year", "month", "disease"],
   valueColumn: "mention_rate",
   idColumnGeojson: "cbscode",
@@ -24,11 +38,5 @@ export const appConfig: AppConfig = {
     "disease": "influenza",
   },
 }
-
-//export const appConfig: AppConfig = {
-//  kind: "geojson-only",
-//  idColumnGeojson: "cbscode",
-//  geojsonFileName: "nl1869.geojson"
-//}
 
 export default appConfig

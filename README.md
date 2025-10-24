@@ -78,6 +78,10 @@ Use this mode if you only want to display a map and nothing else.
 ```javascript
 export const appConfig: AppConfig = {
   "kind": "geojson-only",
+  mapDescription: {
+    title: "My catchy map title",
+    description: "My informative description"
+  },
   "geojsonFileName": "regions.geojson",
   "idColumnGeojson": "region_id",
   "legendTitle": "Regional Data"
@@ -108,6 +112,20 @@ Use this mode when you have a separate data file (e.g., CSV or parquet file) tha
 ```javascript
 export const appConfig: AppConfig = {
   kind: "geojson-datafile",
+  mapDescription: {
+    title: "Historical disease mention rates",
+    description: `This map contains data gathered via Delpher and processed by the ODISSEI SoDa team. Each
+        municipality gets a "mention rate" assigned, which is a proxy for the actual disease
+        pressure in this region. See
+        <a
+          href="https://github.com/sodascience/disease_database"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="underline"
+        >
+          https://github.com/sodascience/disease_database
+        </a>.`
+  },
   categoryColumns: ["year", "month", "disease"],
   valueColumn: "mention_rate",
   idColumnGeojson: "cbscode",
@@ -129,6 +147,15 @@ export const appConfig: AppConfig = {
   },
 }
 ```
+
+#### Map description Configuration
+
+The `mapDescription` object controls the map description that will be shown in the information box.
+
+**Fields:**
+
+- **`title`** (required, string): Your map title
+- **`description`** (required, string): Your map description, supports html so you can use html formatted urls
 
 #### Map Color Configuration
 
